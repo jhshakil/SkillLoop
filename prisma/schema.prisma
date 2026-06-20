@@ -1,0 +1,299 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum CourseStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum CourseType {
+  PUBLIC
+  PRIVATE
+}
+
+enum VideoStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum QuestionStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum EnrollmentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          UserRole  @default(USER)
+  isApproved    Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  enrollments   Enrollment[]
+  notes         Note[]
+  mcqSubmissions MCQSubmission[]
+  comments      Comment[]
+
+  // Analytics relations
+  adminActivities   AdminActivity[]   @relation("AdminActions")
+  moderatorActivities ModeratorActivity[] @relation("ModeratorActions")
+
+  // Courses created by admin/superadmin
+  coursesCreated Course[] @relation("CourseCreator")
+}
+
+model Course {
+  id          String       @id @default(cuid())
+  title       String
+  description String?      @db.Text
+  thumbnail   String?
+  status      CourseStatus @default(DRAFT)
+  type        CourseType   @default(PUBLIC)
+  createdById String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  creator     User         @relation("CourseCreator", fields: [createdById], references: [id])
+  modules     Module[]
+  enrollments Enrollment[]
+
+  @@index([createdById])
+  @@index([status])
+  @@index([type])
+}
+
+model Module {
+  id        String  @id @default(cuid())
+  title     String
+  order     Int
+  courseId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  course Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  videos Video[]
+
+  @@index([courseId])
+  @@unique([courseId, order])
+}
+
+model Video {
+  id            String      @id @default(cuid())
+  title         String
+  youtubeUrl    String
+  description   String?     @db.Text
+  status        VideoStatus @default(DRAFT)
+  order         Int
+  moduleId      String
+  commentsEnabled Boolean   @default(true)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  module    Module    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  comments  Comment[]
+  notes     Note[]
+  mcqQuestions MCQQuestion[]
+
+  @@index([moduleId])
+  @@unique([moduleId, order])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  userId    String
+  videoId   String
+  parentId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video    Video     @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Comment[] @relation("CommentReplies")
+
+  @@index([videoId])
+  @@index([parentId])
+  @@index([userId])
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  userId    String
+  videoId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, videoId])
+  @@index([userId])
+  @@index([videoId])
+}
+
+model MCQQuestion {
+  id          String         @id @default(cuid())
+  question    String         @db.Text
+  options     String[]       // Array of option strings
+  correctAnswer Int          // Index of correct option (0-based)
+  explanation String?        @db.Text
+  status      QuestionStatus @default(DRAFT)
+  videoId     String
+  order       Int            @default(0)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  video       Video          @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  submissions MCQSubmission[]
+
+  @@index([videoId])
+}
+
+model MCQSubmission {
+  id           String   @id @default(cuid())
+  userId       String
+  questionId   String
+  selectedAnswer Int
+  isCorrect    Boolean
+  createdAt    DateTime @default(now())
+
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question MCQQuestion  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+  @@index([userId])
+  @@index([questionId])
+}
+
+model Enrollment {
+  id        String           @id @default(cuid())
+  userId    String
+  courseId  String
+  status    EnrollmentStatus @default(PENDING)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
+  @@index([status])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  message   String   @db.Text
+  type      String   // COMMENT, ENROLLMENT, COURSE_UPDATE, etc.
+  link      String?  // Link to the relevant resource
+  isRead    Boolean  @default(false)
+  userId    String   // The moderator/admin who should see this
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+}
+
+// Admin activity log (visible to Super Admin)
+model AdminActivity {
+  id        String   @id @default(cuid())
+  action    String   // CREATE_COURSE, UPDATE_COURSE, DELETE_COURSE, ADD_VIDEO, etc.
+  details   String?  @db.Text
+  adminId   String
+  targetId  String?  // ID of the affected resource
+  createdAt DateTime @default(now())
+
+  admin User @relation("AdminActions", fields: [adminId], references: [id])
+
+  @@index([adminId])
+  @@index([createdAt])
+}
+
+// Moderator activity log (visible to Admin)
+model ModeratorActivity {
+  id        String   @id @default(cuid())
+  action    String   // REPLY_COMMENT, DELETE_COMMENT, etc.
+  details   String?  @db.Text
+  moderatorId String
+  targetId  String?  // ID of the affected resource (e.g., commentId)
+  createdAt DateTime @default(now())
+
+  moderator User @relation("ModeratorActions", fields: [moderatorId], references: [id])
+
+  @@index([moderatorId])
+  @@index([createdAt])
+}
+
+model OtpToken {
+  id        String   @id @default(cuid())
+  email     String
+  otp       String
+  type      String   // SIGNUP, FORGOT_PASSWORD
+  expiresAt DateTime
+  isUsed    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([email, type])
+}
+
+model ApprovedEmail {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
