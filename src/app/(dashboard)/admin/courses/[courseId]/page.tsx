@@ -7,10 +7,10 @@ import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import {
   Dialog,
   DialogContent,
@@ -26,7 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Play, Plus, Edit, Trash2, ArrowLeft } from "lucide-react";
+import { Play, Plus, Edit, Trash2, ArrowLeft, Film, BookOpen } from "lucide-react";
 import { formatDate, getStatusBadgeColor, extractYouTubeId } from "@/lib/utils";
 import apiClient from "@/lib/api-client";
 import { toast } from "sonner";
@@ -51,7 +51,9 @@ export default function AdminCourseDetailPage() {
   const [isModuleOpen, setIsModuleOpen] = useState(false);
   const [newModuleTitle, setNewModuleTitle] = useState("");
   const [isVideoOpen, setIsVideoOpen] = useState(false);
+  const [isEditVideoOpen, setIsEditVideoOpen] = useState(false);
   const [selectedModuleId, setSelectedModuleId] = useState("");
+  const [editingVideoId, setEditingVideoId] = useState("");
   const [newVideo, setNewVideo] = useState({
     title: "",
     youtubeUrl: "",
@@ -125,6 +127,16 @@ export default function AdminCourseDetailPage() {
     },
   });
 
+  const updateVideoMutation = useMutation({
+    mutationFn: (data: { id: string; title?: string; youtubeUrl?: string; description?: string | null; commentsEnabled?: boolean }) =>
+      apiClient.patch(`/videos/${data.id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["course", courseId] });
+      setIsEditVideoOpen(false);
+      toast.success("Video updated");
+    },
+  });
+
   const updateVideoStatusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) =>
       apiClient.patch(`/videos/${id}`, { status }),
@@ -154,9 +166,12 @@ export default function AdminCourseDetailPage() {
     );
   }
 
+  const totalVideos = data.modules.reduce((s, m) => s + m.videos.length, 0);
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        {/* Back + Header */}
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
             <Link href="/admin/courses">
@@ -191,139 +206,216 @@ export default function AdminCourseDetailPage() {
           </Button>
         </div>
 
-        <p className="text-muted-foreground">
-          {data.description || "No description"}
-        </p>
+        {/* Thumbnail */}
+        {data.thumbnail && (
+          <div className="relative w-full h-48 md:h-64 rounded-lg overflow-hidden bg-muted">
+            <Image src={data.thumbnail} alt={data.title} fill className="object-cover" />
+          </div>
+        )}
 
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Modules</h2>
-          <Button onClick={() => setIsModuleOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" /> Add Module
-          </Button>
+        {/* Description */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">About this course</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground whitespace-pre-wrap">
+              {data.description || "No description"}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Stats */}
+        <div className="grid gap-4 grid-cols-2">
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <BookOpen className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{data.modules.length}</p>
+                <p className="text-xs text-muted-foreground">Modules</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Film className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{totalVideos}</p>
+                <p className="text-xs text-muted-foreground">Videos</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        <Tabs defaultValue={data.modules[0]?.id || ""}>
-          <TabsList className="w-full justify-start flex-wrap h-auto">
-            {data.modules.map((mod) => (
-              <TabsTrigger key={mod.id} value={mod.id}>
-                {mod.title}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          {data.modules.map((mod) => (
-            <TabsContent key={mod.id} value={mod.id} className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">{mod.title}</h3>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedModuleId(mod.id);
-                      setIsVideoOpen(true);
-                    }}
-                  >
-                    <Plus className="mr-2 h-4 w-4" /> Add Video
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      if (confirm("Delete this module?"))
-                        deleteModuleMutation.mutate(mod.id);
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-              </div>
-              <div className="space-y-3">
-                {mod.videos.map((video) => (
-                  <Card key={video.id}>
-                    <CardContent className="flex items-center gap-4 p-4">
-                      <div className="relative w-40 h-24 rounded-md overflow-hidden shrink-0 bg-muted">
-                        {extractYouTubeId(video.youtubeUrl) && (
-                          <Image
-                            src={`https://img.youtube.com/vi/${extractYouTubeId(video.youtubeUrl)}/mqdefault.jpg`}
-                            alt={video.title}
-                            width={160}
-                            height={96}
-                            className="w-full h-full object-cover"
-                          />
-                        )}
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                          <Play className="h-6 w-6 text-white" />
-                        </div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium truncate">{video.title}</h4>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {video.description || "No description"}
+        {/* Modules Accordion */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">Course Content</h2>
+            <Button onClick={() => setIsModuleOpen(true)} size="sm">
+              <Plus className="mr-2 h-4 w-4" /> Add Module
+            </Button>
+          </div>
+
+          {data.modules.length > 0 ? (
+            <Accordion type="single" collapsible defaultValue={data.modules[0]?.id} className="space-y-2">
+              {data.modules.map((mod, modIdx) => (
+                <AccordionItem key={mod.id} value={mod.id} className="border rounded-lg bg-card px-4">
+                  <AccordionTrigger className="hover:no-underline">
+                    <div className="flex items-center gap-3 text-left flex-1">
+                      <span className="flex items-center justify-center h-7 w-7 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                        {modIdx + 1}
+                      </span>
+                      <div>
+                        <p className="font-medium">{mod.title}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {mod.videos.length} video{mod.videos.length !== 1 ? "s" : ""}
                         </p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge className={getStatusBadgeColor(video.status)}>
-                            {video.status}
-                          </Badge>
-                          {video.status === "DRAFT" ? (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() =>
-                                updateVideoStatusMutation.mutate({
-                                  id: video.id,
-                                  status: "PUBLISHED",
-                                })
-                              }
-                            >
-                              Publish
-                            </Button>
-                          ) : (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() =>
-                                updateVideoStatusMutation.mutate({
-                                  id: video.id,
-                                  status: "DRAFT",
-                                })
-                              }
-                            >
-                              Unpublish
-                            </Button>
-                          )}
-                          <Badge
-                            variant={
-                              video.commentsEnabled ? "success" : "outline"
-                            }
-                          >
-                            Comments {video.commentsEnabled ? "On" : "Off"}
-                          </Badge>
-                        </div>
                       </div>
+                    </div>
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      className="inline-flex items-center justify-center h-7 w-7 mr-2 rounded-md text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm(`Delete module "${mod.title}"?`))
+                          deleteModuleMutation.mutate(mod.id);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.stopPropagation();
+                          if (confirm(`Delete module "${mod.title}"?`))
+                            deleteModuleMutation.mutate(mod.id);
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-3 pt-2">
+                      {mod.videos.map((video, vidIdx) => (
+                        <div
+                          key={video.id}
+                          className="flex items-center gap-4 p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors group"
+                        >
+                          <span className="text-sm text-muted-foreground font-mono w-6">
+                            {vidIdx + 1}.
+                          </span>
+                          <div className="relative w-28 h-16 rounded overflow-hidden shrink-0 bg-black">
+                            {extractYouTubeId(video.youtubeUrl) ? (
+                              <Image
+                                src={`https://img.youtube.com/vi/${extractYouTubeId(video.youtubeUrl)}/mqdefault.jpg`}
+                                alt={video.title}
+                                width={112}
+                                height={64}
+                                className="w-full h-full object-cover opacity-80"
+                              />
+                            ) : (
+                              <div className="flex items-center justify-center h-full">
+                                <Play className="h-5 w-5 text-white/50" />
+                              </div>
+                            )}
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <Play className="h-4 w-4 text-white" />
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{video.title}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge className={getStatusBadgeColor(video.status)}>
+                                {video.status}
+                              </Badge>
+                              <Badge variant={video.commentsEnabled ? "default" : "outline"} className="text-xs">
+                                {video.commentsEnabled ? "Comments On" : "Comments Off"}
+                              </Badge>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setEditingVideoId(video.id);
+                                setNewVideo({
+                                  title: video.title,
+                                  youtubeUrl: video.youtubeUrl,
+                                  description: video.description || "",
+                                  commentsEnabled: video.commentsEnabled,
+                                });
+                                setIsEditVideoOpen(true);
+                              }}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            {video.status === "DRAFT" ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
+                                  updateVideoStatusMutation.mutate({
+                                    id: video.id,
+                                    status: "PUBLISHED",
+                                  })
+                                }
+                              >
+                                Publish
+                              </Button>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
+                                  updateVideoStatusMutation.mutate({
+                                    id: video.id,
+                                    status: "DRAFT",
+                                  })
+                                }
+                              >
+                                Unpublish
+                              </Button>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive"
+                              onClick={() => {
+                                if (confirm("Delete this video?"))
+                                  deleteVideoMutation.mutate(video.id);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
+                        className="w-full"
                         onClick={() => {
-                          if (confirm("Delete this video?"))
-                            deleteVideoMutation.mutate(video.id);
+                          setSelectedModuleId(mod.id);
+                          setIsVideoOpen(true);
                         }}
                       >
-                        <Trash2 className="h-4 w-4 text-destructive" />
+                        <Plus className="mr-2 h-4 w-4" /> Add Video
                       </Button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
-          ))}
-          {data.modules.length === 0 && (
-            <Card className="text-center py-8">
-              <p className="text-muted-foreground">
-                No modules yet. Add your first module!
-              </p>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          ) : (
+            <Card className="text-center py-12">
+              <BookOpen className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+              <p className="text-muted-foreground">No modules yet. Add your first module to get started.</p>
             </Card>
           )}
-        </Tabs>
+        </div>
 
         {/* Edit Course Dialog */}
         <Dialog open={isEditing} onOpenChange={setIsEditing}>
@@ -336,27 +428,21 @@ export default function AdminCourseDetailPage() {
                 <Label>Title</Label>
                 <Input className="mt-2" 
                   value={editData.title}
-                  onChange={(e) =>
-                    setEditData({ ...editData, title: e.target.value })
-                  }
+                  onChange={(e) => setEditData({ ...editData, title: e.target.value })}
                 />
               </div>
               <div>
                 <Label>Description</Label>
                 <Textarea className="mt-2" 
                   value={editData.description}
-                  onChange={(e) =>
-                    setEditData({ ...editData, description: e.target.value })
-                  }
+                  onChange={(e) => setEditData({ ...editData, description: e.target.value })}
                 />
               </div>
               <div>
                 <Label>Thumbnail</Label>
                 <ImageUpload className="mt-2" 
                   value={editData.thumbnail}
-                  onChange={(url) =>
-                    setEditData({ ...editData, thumbnail: url })
-                  }
+                  onChange={(url) => setEditData({ ...editData, thumbnail: url })}
                 />
               </div>
               <div>
@@ -395,10 +481,7 @@ export default function AdminCourseDetailPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button
-                onClick={() => updateMutation.mutate(editData)}
-                disabled={updateMutation.isPending}
-              >
+              <Button onClick={() => updateMutation.mutate(editData)} disabled={updateMutation.isPending}>
                 Save
               </Button>
             </DialogFooter>
@@ -423,9 +506,7 @@ export default function AdminCourseDetailPage() {
             </div>
             <DialogFooter>
               <Button
-                onClick={() =>
-                  addModuleMutation.mutate({ title: newModuleTitle, courseId })
-                }
+                onClick={() => addModuleMutation.mutate({ title: newModuleTitle, courseId })}
                 disabled={!newModuleTitle}
               >
                 Add
@@ -445,9 +526,7 @@ export default function AdminCourseDetailPage() {
                 <Label>Video Title</Label>
                 <Input className="mt-2" 
                   value={newVideo.title}
-                  onChange={(e) =>
-                    setNewVideo({ ...newVideo, title: e.target.value })
-                  }
+                  onChange={(e) => setNewVideo({ ...newVideo, title: e.target.value })}
                   placeholder="Video title"
                 />
               </div>
@@ -455,9 +534,7 @@ export default function AdminCourseDetailPage() {
                 <Label>YouTube URL</Label>
                 <Input className="mt-2" 
                   value={newVideo.youtubeUrl}
-                  onChange={(e) =>
-                    setNewVideo({ ...newVideo, youtubeUrl: e.target.value })
-                  }
+                  onChange={(e) => setNewVideo({ ...newVideo, youtubeUrl: e.target.value })}
                   placeholder="https://youtube.com/watch?v=..."
                 />
               </div>
@@ -465,33 +542,79 @@ export default function AdminCourseDetailPage() {
                 <Label>Description (Optional)</Label>
                 <Textarea className="mt-2" 
                   value={newVideo.description}
-                  onChange={(e) =>
-                    setNewVideo({ ...newVideo, description: e.target.value })
-                  }
+                  onChange={(e) => setNewVideo({ ...newVideo, description: e.target.value })}
                   placeholder="Optional video description"
                 />
               </div>
-              <div>
+              <div className="flex items-center justify-between">
                 <Label>Enable Comments</Label>
-                <Switch className="mt-2" 
+                <Switch
                   checked={newVideo.commentsEnabled}
-                  onCheckedChange={(v) =>
-                    setNewVideo({ ...newVideo, commentsEnabled: v })
-                  }
+                  onCheckedChange={(v) => setNewVideo({ ...newVideo, commentsEnabled: v })}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                onClick={() => addVideoMutation.mutate({ ...newVideo, moduleId: selectedModuleId })}
+                disabled={!newVideo.title || !newVideo.youtubeUrl}
+              >
+                Add Video
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Video Dialog */}
+        <Dialog open={isEditVideoOpen} onOpenChange={setIsEditVideoOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Video</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Video Title</Label>
+                <Input className="mt-2" 
+                  value={newVideo.title}
+                  onChange={(e) => setNewVideo({ ...newVideo, title: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>YouTube URL</Label>
+                <Input className="mt-2" 
+                  value={newVideo.youtubeUrl}
+                  onChange={(e) => setNewVideo({ ...newVideo, youtubeUrl: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Description (Optional)</Label>
+                <Textarea className="mt-2" 
+                  value={newVideo.description}
+                  onChange={(e) => setNewVideo({ ...newVideo, description: e.target.value })}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label>Enable Comments</Label>
+                <Switch
+                  checked={newVideo.commentsEnabled}
+                  onCheckedChange={(v) => setNewVideo({ ...newVideo, commentsEnabled: v })}
                 />
               </div>
             </div>
             <DialogFooter>
               <Button
                 onClick={() =>
-                  addVideoMutation.mutate({
-                    ...newVideo,
-                    moduleId: selectedModuleId,
+                  updateVideoMutation.mutate({
+                    id: editingVideoId,
+                    title: newVideo.title,
+                    youtubeUrl: newVideo.youtubeUrl,
+                    description: newVideo.description || null,
+                    commentsEnabled: newVideo.commentsEnabled,
                   })
                 }
                 disabled={!newVideo.title || !newVideo.youtubeUrl}
               >
-                Add Video
+                Save Changes
               </Button>
             </DialogFooter>
           </DialogContent>

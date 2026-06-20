@@ -169,6 +169,16 @@ body {
   to { transform: translateY(0); opacity: 1; }
 }
 
+@keyframes accordion-down {
+  from { height: 0; }
+  to { height: var(--radix-accordion-content-height); }
+}
+
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height); }
+  to { height: 0; }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.2s ease-out;
 }
@@ -179,4 +189,12 @@ body {
 
 .animate-slide-in-bottom {
   animation: slideInFromBottom 0.2s ease-out;
+}
+
+.animate-accordion-down {
+  animation: accordion-down 0.2s ease-out;
+}
+
+.animate-accordion-up {
+  animation: accordion-up 0.2s ease-out;
 }
