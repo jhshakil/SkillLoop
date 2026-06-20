@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -19,8 +19,8 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { ArrowLeft, BookOpen, Play, Users, CheckCircle } from "lucide-react";
-import { formatDate, getStatusBadgeColor, extractYouTubeId } from "@/lib/utils";
+import { ArrowLeft, BookOpen, Play, Users, CheckCircle, Loader2 } from "lucide-react";
+import { getStatusBadgeColor, extractYouTubeId } from "@/lib/utils";
 import apiClient from "@/lib/api-client";
 import { toast } from "sonner";
 import type { CourseWithModules, EnrollmentItem } from "@/types";
@@ -165,94 +165,122 @@ export default function UserCourseDetailPage() {
         </div>
 
         {/* Modules & Videos */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Course Content</h2>
-          {course.modules.length > 0 ? (
-            <Tabs defaultValue={course.modules[0]?.id} className="space-y-4">
-              <TabsList className="w-full justify-start flex-wrap h-auto">
-                {course.modules.map((mod) => (
-                  <TabsTrigger key={mod.id} value={mod.id}>
-                    {mod.title}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-              {course.modules.map((mod) => (
-                <TabsContent
-                  key={mod.id}
-                  value={mod.id}
-                  className="space-y-3"
-                >
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-medium">{mod.title}</h3>
-                    <span className="text-sm text-muted-foreground">
-                      {mod.videos.length} video{mod.videos.length !== 1 ? "s" : ""}
-                    </span>
-                  </div>
-                  {mod.videos.map((video, idx) => (
-                    <Card key={video.id} className="hover:shadow-md transition-shadow">
-                      <CardContent className="flex items-center gap-4 p-4">
-                        <div className="relative w-40 h-24 rounded-md overflow-hidden shrink-0 bg-muted">
-                          {extractYouTubeId(video.youtubeUrl) && (
-                            <Image
-                              src={`https://img.youtube.com/vi/${extractYouTubeId(video.youtubeUrl)}/mqdefault.jpg`}
-                              alt={video.title}
-                              width={160}
-                              height={96}
-                              className="w-full h-full object-cover"
-                            />
-                          )}
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                            <Play className="h-6 w-6 text-white" />
-                          </div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium">
-                            {idx + 1}. {video.title}
-                          </h4>
-                          <p className="text-sm text-muted-foreground line-clamp-2 mt-0.5">
-                            {video.description || "No description"}
-                          </p>
-                          <div className="flex items-center gap-2 mt-2">
-                            <Badge className={getStatusBadgeColor(video.status)}>
-                              {video.status}
-                            </Badge>
-                            {video._count?.comments !== undefined && (
-                              <span className="text-xs text-muted-foreground">
-                                {video._count.comments} comment
-                                {video._count.comments !== 1 ? "s" : ""}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <Button variant="ghost" size="icon" asChild>
-                          <Link
-                            href={`/user/courses/${courseId}/modules/${mod.id}/videos/${video.id}`}
-                          >
-                            <Play className="h-4 w-4" />
-                          </Link>
-                        </Button>
-                      </CardContent>
-                    </Card>
+        {isEnrolled ? (
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Course Content</h2>
+            {course.modules.length > 0 ? (
+              <Tabs defaultValue={course.modules[0]?.id} className="space-y-4">
+                <TabsList className="w-full justify-start flex-wrap h-auto">
+                  {course.modules.map((mod) => (
+                    <TabsTrigger key={mod.id} value={mod.id}>
+                      {mod.title}
+                    </TabsTrigger>
                   ))}
-                  {mod.videos.length === 0 && (
-                    <Card className="py-6 text-center">
-                      <p className="text-muted-foreground text-sm">
-                        No videos in this module yet.
-                      </p>
-                    </Card>
-                  )}
-                </TabsContent>
-              ))}
-            </Tabs>
-          ) : (
-            <Card className="text-center py-12">
-              <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">
-                No modules have been added to this course yet.
+                </TabsList>
+                {course.modules.map((mod) => (
+                  <TabsContent
+                    key={mod.id}
+                    value={mod.id}
+                    className="space-y-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-medium">{mod.title}</h3>
+                      <span className="text-sm text-muted-foreground">
+                        {mod.videos.length} video{mod.videos.length !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+                    {mod.videos.map((video, idx) => (
+                      <Card key={video.id} className="hover:shadow-md transition-shadow">
+                        <CardContent className="flex items-center gap-4 p-4">
+                          <div className="relative w-40 h-24 rounded-md overflow-hidden shrink-0 bg-muted">
+                            {extractYouTubeId(video.youtubeUrl) && (
+                              <Image
+                                src={`https://img.youtube.com/vi/${extractYouTubeId(video.youtubeUrl)}/mqdefault.jpg`}
+                                alt={video.title}
+                                width={160}
+                                height={96}
+                                className="w-full h-full object-cover"
+                              />
+                            )}
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                              <Play className="h-6 w-6 text-white" />
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium">
+                              {idx + 1}. {video.title}
+                            </h4>
+                            <p className="text-sm text-muted-foreground line-clamp-2 mt-0.5">
+                              {video.description || "No description"}
+                            </p>
+                            <div className="flex items-center gap-2 mt-2">
+                              <Badge className={getStatusBadgeColor(video.status)}>
+                                {video.status}
+                              </Badge>
+                              {video._count?.comments !== undefined && (
+                                <span className="text-xs text-muted-foreground">
+                                  {video._count.comments} comment
+                                  {video._count.comments !== 1 ? "s" : ""}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <Button variant="ghost" size="icon" asChild>
+                            <Link
+                              href={`/user/courses/${courseId}/modules/${mod.id}/videos/${video.id}`}
+                            >
+                              <Play className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                    {mod.videos.length === 0 && (
+                      <Card className="py-6 text-center">
+                        <p className="text-muted-foreground text-sm">
+                          No videos in this module yet.
+                        </p>
+                      </Card>
+                    )}
+                  </TabsContent>
+                ))}
+              </Tabs>
+            ) : (
+              <Card className="text-center py-12">
+                <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">
+                  No modules have been added to this course yet.
+                </p>
+              </Card>
+            )}
+          </div>
+        ) : (
+          <Card className="text-center py-12 border-primary/30 bg-primary/5">
+            <CheckCircle className="h-12 w-12 text-primary mx-auto mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Enroll to Access Content</h2>
+            <p className="text-muted-foreground max-w-md mx-auto mb-6">
+              You need to enroll in this course to access modules, videos, and other learning materials.
+            </p>
+            {course.status === "PUBLISHED" ? (
+              <Button
+                size="lg"
+                onClick={() => setIsEnrollOpen(true)}
+                disabled={enrollMutation.isPending}
+              >
+                {enrollMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                )}
+                Enroll Now — Free
+              </Button>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                This course is not yet published. Check back later.
               </p>
-            </Card>
-          )}
-        </div>
+            )}
+          </Card>
+        )}
 
         {/* Enroll Dialog */}
         <Dialog open={isEnrollOpen} onOpenChange={setIsEnrollOpen}>

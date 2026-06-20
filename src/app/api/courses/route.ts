@@ -14,7 +14,7 @@ const createCourseSchema = z.object({
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await auth();
+    await auth();
     const { searchParams } = new URL(req.url);
     const type = searchParams.get("type");
     const status = searchParams.get("status");

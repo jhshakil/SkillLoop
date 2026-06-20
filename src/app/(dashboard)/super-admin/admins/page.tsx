@@ -35,11 +35,7 @@ export default function SuperAdminAdminsPage() {
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
   const [newRole, setNewRole] = useState<string>("");
-  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [newApprovedEmail, setNewApprovedEmail] = useState("");
-  const [approvedEmails, setApprovedEmails] = useState<
-    { id: string; email: string }[]
-  >([]);
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({

@@ -11,7 +11,7 @@ import apiClient from "@/lib/api-client";
 import type { EnrollmentItem, NoteWithVideo } from "@/types";
 
 export default function UserDashboardPage() {
-  const { data: enrollments, isLoading: isEnrollmentsLoading } = useQuery({
+  const { data: enrollments } = useQuery({
     queryKey: ["user-enrollments"],
     queryFn: async () => {
       const res = await apiClient.get("/enrollments");
@@ -19,7 +19,7 @@ export default function UserDashboardPage() {
     },
   });
 
-  const { data: notes, isLoading: isNotesLoading } = useQuery({
+  const { data: notes } = useQuery({
     queryKey: ["user-notes-dashboard"],
     queryFn: async () => {
       const res = await apiClient.get("/notes", { params: { pageSize: 5 } });

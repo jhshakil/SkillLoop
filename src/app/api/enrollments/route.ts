@@ -31,8 +31,8 @@ export async function GET(req: NextRequest) {
         prisma.enrollment.findMany({
           where,
           include: {
-            user: { select: { id: true, name: true, email: true } },
-            course: { select: { id: true, title: true } },
+            user: { select: { id: true, name: true, email: true, image: true, role: true, isApproved: true, createdAt: true, updatedAt: true } },
+            course: { select: { id: true, title: true, thumbnail: true } },
           },
           orderBy: { createdAt: "desc" },
           skip: (page - 1) * pageSize,

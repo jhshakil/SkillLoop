@@ -11,7 +11,6 @@ export async function GET(req: NextRequest) {
 
     const role = session.user.role;
     const { searchParams } = new URL(req.url);
-    const type = searchParams.get("type") || "moderator";
     const page = parseInt(searchParams.get("page") || "1");
     const pageSize = parseInt(searchParams.get("pageSize") || "20");
 

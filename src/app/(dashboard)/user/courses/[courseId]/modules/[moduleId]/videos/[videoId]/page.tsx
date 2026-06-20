@@ -14,11 +14,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Send, MessageSquare, FileText, HelpCircle, Check, X, ChevronRight } from "lucide-react";
+import { ArrowLeft, Send, MessageSquare, FileText, HelpCircle, Check, X, ChevronRight, CheckCircle, Loader2, Lock } from "lucide-react";
 import { extractYouTubeId, timeAgo } from "@/lib/utils";
 import apiClient from "@/lib/api-client";
 import { toast } from "sonner";
 import Link from "next/link";
+import type { EnrollmentItem } from "@/types";
 
 interface CommentData {
   id: string;
@@ -46,12 +47,32 @@ export default function UserVideoPage() {
   const queryClient = useQueryClient();
   const videoId = params.videoId as string;
   const courseId = params.courseId as string;
-  const moduleId = params.moduleId as string;
 
   const [commentText, setCommentText] = useState("");
   const [replyText, setReplyText] = useState<Record<string, string>>({});
   const [noteContent, setNoteContent] = useState("");
   const [mcqAnswers, setMcqAnswers] = useState<Record<string, number>>({});
+
+  const { data: enrollments } = useQuery({
+    queryKey: ["user-enrollments"],
+    queryFn: async () => {
+      const res = await apiClient.get("/enrollments");
+      return res.data.data as EnrollmentItem[];
+    },
+  });
+
+  const isEnrolled = !!enrollments?.find((e: EnrollmentItem) => e.courseId === courseId);
+
+  const enrollMutation = useMutation({
+    mutationFn: () => apiClient.post("/enrollments", { courseId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["user-enrollments"] });
+      toast.success("Successfully enrolled!");
+    },
+    onError: (err: unknown) => {
+      toast.error((err as { response?: { data?: { error?: string } } }).response?.data?.error || "Failed to enroll");
+    },
+  });
 
   const { data: video, isLoading } = useQuery({
     queryKey: ["video", videoId],
@@ -139,6 +160,48 @@ export default function UserVideoPage() {
   }
 
   const youtubeId = extractYouTubeId(video?.youtubeUrl || "");
+
+  if (!isEnrolled && userRole !== "ADMIN" && userRole !== "SUPER_ADMIN") {
+    return (
+      <DashboardLayout>
+        <div className="space-y-6 max-w-5xl">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" asChild>
+              <Link href={`/user/courses/${courseId}`}>
+                <ArrowLeft className="h-4 w-4" />
+              </Link>
+            </Button>
+            <div>
+              <h1 className="text-xl font-bold">{video?.title}</h1>
+              <p className="text-sm text-muted-foreground">
+                {video?.module?.course?.title} <ChevronRight className="inline h-3 w-3" /> {video?.module?.title}
+              </p>
+            </div>
+          </div>
+
+          <Card className="text-center py-16 border-primary/30 bg-primary/5">
+            <Lock className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Enrollment Required</h2>
+            <p className="text-muted-foreground max-w-md mx-auto mb-6">
+              You need to enroll in this course to watch videos, leave comments, and access learning materials.
+            </p>
+            <Button
+              size="lg"
+              onClick={() => enrollMutation.mutate()}
+              disabled={enrollMutation.isPending}
+            >
+              {enrollMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <CheckCircle className="mr-2 h-4 w-4" />
+              )}
+              Enroll to Watch
+            </Button>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>

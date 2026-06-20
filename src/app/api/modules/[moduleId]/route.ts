@@ -27,12 +27,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ mo
       return NextResponse.json({ error: "Invalid input" }, { status: 400 });
     }
 
-    const module = await prisma.module.update({
+    const updatedModule = await prisma.module.update({
       where: { id: moduleId },
       data: validation.data,
     });
 
-    return NextResponse.json({ data: module });
+    return NextResponse.json({ data: updatedModule });
   } catch (error) {
     console.error("Update module error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

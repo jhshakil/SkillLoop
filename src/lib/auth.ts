@@ -6,15 +6,6 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { UserRole } from "@prisma/client";
 
-function getDashboardUrl(role: string): string {
-  switch (role) {
-    case "SUPER_ADMIN": return "/super-admin/analytics";
-    case "ADMIN": return "/admin/courses";
-    case "MODERATOR": return "/moderator/notifications";
-    default: return "/user/dashboard";
-  }
-}
-
 export const { handlers, signIn, signOut, auth } = NextAuth({
   pages: {
     signIn: "/login",
@@ -52,6 +43,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             name: user.name ?? "",
             image: user.image,
             role: user.role,
+            isApproved: user.isApproved,
           };
         } catch (err) {
           console.error("[AUTH] Authorize error:", err);
@@ -84,6 +76,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.id = user.id;
         token.role = (user as { role?: string }).role || "USER";
+        token.isApproved = (user as { isApproved?: boolean }).isApproved ?? false;
       }
       if (account) {
         token.accessToken = account.access_token;
@@ -94,6 +87,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as UserRole;
+        session.user.isApproved = token.isApproved as boolean;
       }
       return session;
     },

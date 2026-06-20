@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -24,7 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Search, ChevronUp, ChevronDown, Users } from "lucide-react";
+import { Search, Users } from "lucide-react";
 import { formatDate, getRoleBadgeColor } from "@/lib/utils";
 import apiClient from "@/lib/api-client";
 import { toast } from "sonner";

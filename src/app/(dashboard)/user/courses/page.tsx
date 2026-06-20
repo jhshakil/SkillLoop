@@ -16,7 +16,7 @@ import type { EnrollmentItem } from "@/types";
 export default function UserCoursesPage() {
   const [search, setSearch] = useState("");
 
-  const { data: enrollments, isLoading } = useQuery({
+  const { data: enrollments, isLoading, error, refetch } = useQuery({
     queryKey: ["user-enrollments"],
     queryFn: async () => {
       const res = await apiClient.get("/enrollments");
@@ -28,6 +28,21 @@ export default function UserCoursesPage() {
     if (!search) return true;
     return e.course.title.toLowerCase().includes(search.toLowerCase());
   });
+
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="space-y-4">
+          <h1 className="text-2xl font-bold">My Courses</h1>
+          <Card className="text-center py-12">
+            <p className="text-destructive mb-2">Failed to load courses</p>
+            <p className="text-sm text-muted-foreground mb-4">{(error as Error)?.message || "Unknown error"}</p>
+            <Button variant="outline" onClick={() => refetch()}>Retry</Button>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
