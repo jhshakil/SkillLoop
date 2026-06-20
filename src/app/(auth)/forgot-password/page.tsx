@@ -20,6 +20,7 @@ export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -52,27 +53,23 @@ export default function ForgotPasswordPage() {
     }
   }
 
-  async function onVerifyOtp() {
+  function onContinueToReset() {
     const otpCode = otp.join("");
     if (otpCode.length !== 6) {
       toast.error("Please enter the complete 6-digit OTP");
       return;
     }
-    setIsLoading(true);
-    try {
-      await apiClient.post("/auth/otp/verify", { email, otp: otpCode, type: "FORGOT_PASSWORD" });
-      setStep("reset");
-    } catch (error: unknown) {
-      toast.error((error as { response?: { data?: { error?: string } } }).response?.data?.error || "Invalid OTP");
-    } finally {
-      setIsLoading(false);
-    }
+    setStep("reset");
   }
 
   async function onResetPassword(e: React.FormEvent) {
     e.preventDefault();
     if (newPassword.length < 8) {
       toast.error("Password must be at least 8 characters");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match");
       return;
     }
     setIsLoading(true);
@@ -154,9 +151,8 @@ export default function ForgotPasswordPage() {
                   />
                 ))}
               </div>
-              <Button className="w-full" onClick={onVerifyOtp} disabled={isLoading || otp.join("").length !== 6}>
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Verify OTP
+              <Button className="w-full" onClick={onContinueToReset} disabled={otp.join("").length !== 6}>
+                Continue
               </Button>
             </div>
           )}
@@ -185,6 +181,18 @@ export default function ForgotPasswordPage() {
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">Confirm Password</Label>
+                <Input
+                  id="confirm-password"
+                  type={showPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  minLength={8}
+                  disabled={isLoading}
+                />
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
