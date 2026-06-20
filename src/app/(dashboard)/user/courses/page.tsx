@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, BookOpen, Play } from "lucide-react";
-import { formatDate, getStatusBadgeColor } from "@/lib/utils";
+import { Search, BookOpen, ChevronRight } from "lucide-react";
+import { formatDate, getStatusBadgeColor, cn } from "@/lib/utils";
 import apiClient from "@/lib/api-client";
 import type { EnrollmentItem } from "@/types";
 
@@ -66,11 +66,12 @@ export default function UserCoursesPage() {
         {isLoading ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map((i) => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-6">
+              <Card key={i} className="animate-pulse overflow-hidden">
+                <div className="h-40 bg-muted" />
+                <CardContent className="p-4">
                   <div className="h-5 w-3/4 bg-muted rounded" />
                   <div className="h-4 w-1/2 bg-muted rounded mt-2" />
-                  <div className="h-9 w-24 bg-muted rounded mt-4" />
+                  <div className="h-9 w-full bg-muted rounded mt-4" />
                 </CardContent>
               </Card>
             ))}
@@ -80,45 +81,41 @@ export default function UserCoursesPage() {
             {filtered.length > 0 ? (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {filtered.map((enrollment) => (
-                  <Card key={enrollment.id} className="hover:shadow-md transition-shadow overflow-hidden">
-                    <div className="relative h-40 bg-muted">
-                      {enrollment.course.thumbnail ? (
-                        <Image
-                          src={enrollment.course.thumbnail}
-                          alt={enrollment.course.title}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="flex items-center justify-center h-full">
-                          <BookOpen className="h-10 w-10 text-muted-foreground/50" />
-                        </div>
-                      )}
-                    </div>
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-lg truncate">
-                            {enrollment.course.title}
-                          </h3>
-                          <div className="flex items-center gap-2 mt-2">
-                            <Badge className={getStatusBadgeColor(enrollment.status)}>
-                              {enrollment.status}
-                            </Badge>
-                            <span className="text-sm text-muted-foreground">
-                              <BookOpen className="inline h-3 w-3 mr-1" />
-                              Enrolled {formatDate(enrollment.createdAt)}
-                            </span>
+                  <Link key={enrollment.id} href={`/user/courses/${enrollment.courseId}`}>
+                    <Card className="hover:shadow-lg transition-all hover:-translate-y-1 overflow-hidden group cursor-pointer h-full">
+                      <div className="relative h-44 bg-muted">
+                        {enrollment.course.thumbnail ? (
+                          <Image
+                            src={enrollment.course.thumbnail}
+                            alt={enrollment.course.title}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center h-full bg-gradient-to-br from-primary/20 to-primary/5">
+                            <BookOpen className="h-12 w-12 text-primary/40" />
                           </div>
-                        </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                        <Badge className={cn("absolute top-3 right-3 text-xs", getStatusBadgeColor(enrollment.status))}>
+                          {enrollment.status}
+                        </Badge>
                       </div>
-                      <Button className="mt-4" size="sm" asChild>
-                        <Link href={`/user/courses/${enrollment.courseId}`}>
-                          <Play className="mr-2 h-3 w-3" /> View Course
-                        </Link>
-                      </Button>
-                    </CardContent>
-                  </Card>
+                      <CardContent className="p-4 space-y-3">
+                        <h3 className="font-semibold leading-tight line-clamp-1">
+                          {enrollment.course.title}
+                        </h3>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <BookOpen className="h-3.5 w-3.5" />
+                          Enrolled {formatDate(enrollment.createdAt)}
+                        </p>
+                        <div className="flex items-center gap-1 text-sm font-medium text-primary pt-1 border-t">
+                          View Course <ChevronRight className="h-4 w-4" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
                 ))}
               </div>
             ) : (

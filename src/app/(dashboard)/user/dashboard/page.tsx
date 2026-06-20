@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { BookOpen, FileText, TrendingUp, Play, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -87,33 +88,43 @@ export default function UserDashboardPage() {
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {enrollments?.map((enrollment) => (
-              <Card key={enrollment.id} className="hover:shadow-md transition-shadow overflow-hidden">
-                <div className="relative h-32 bg-muted">
-                  {enrollment.course.thumbnail ? (
-                    <Image
-                      src={enrollment.course.thumbnail}
-                      alt={enrollment.course.title}
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center h-full">
-                      <BookOpen className="h-8 w-8 text-muted-foreground/50" />
+              <Link key={enrollment.id} href={`/user/courses/${enrollment.courseId}`}>
+                <Card className="hover:shadow-lg transition-all hover:-translate-y-1 overflow-hidden group cursor-pointer h-full">
+                  <div className="relative h-36 bg-muted">
+                    {enrollment.course.thumbnail ? (
+                      <Image
+                        src={enrollment.course.thumbnail}
+                        alt={enrollment.course.title}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center h-full bg-gradient-to-br from-primary/20 to-primary/5">
+                        <BookOpen className="h-10 w-10 text-primary/40" />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                    <Badge variant="secondary" className="absolute top-3 left-3 text-xs">
+                      {enrollment.status}
+                    </Badge>
+                  </div>
+                  <CardContent className="p-4 space-y-3">
+                    <h3 className="font-semibold leading-tight line-clamp-1">{enrollment.course.title}</h3>
+                    <div className="space-y-1">
+                      <Badge variant="secondary" className="text-xs">
+                        {enrollment.status}
+                      </Badge>
+                      <p className="text-xs text-muted-foreground">
+                        Enrolled {formatDate(enrollment.createdAt)}
+                      </p>
                     </div>
-                  )}
-                </div>
-                <CardContent className="p-4">
-                  <h3 className="font-semibold">{enrollment.course.title}</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Enrolled {formatDate(enrollment.createdAt)}
-                  </p>
-                  <Button size="sm" className="mt-3" asChild>
-                    <Link href={`/user/courses/${enrollment.courseId}`}>
-                      <Play className="mr-2 h-3 w-3" /> Continue
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
+                    <div className="flex items-center gap-1 text-primary text-sm font-medium pt-1 border-t">
+                      <Play className="h-4 w-4" /> Continue Learning
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
             {enrollments?.length === 0 && (
               <Card className="col-span-full py-8 text-center">
@@ -168,33 +179,37 @@ export default function UserDashboardPage() {
           <h2 className="text-lg font-semibold mb-4">Explore Courses</h2>
           <div className="grid gap-4 md:grid-cols-3">
             {courses?.map((course: { id: string; title: string; description: string | null; thumbnail: string | null; status: string; type: string; _count?: { modules: number } }) => (
-              <Card key={course.id} className="hover:shadow-md transition-shadow overflow-hidden">
-                <div className="relative h-32 bg-muted">
-                  {course.thumbnail ? (
-                    <Image src={course.thumbnail} alt={course.title} fill className="object-cover" />
-                  ) : (
-                    <div className="flex items-center justify-center h-full">
-                      <BookOpen className="h-8 w-8 text-muted-foreground/50" />
+              <Link key={course.id} href={`/user/courses/${course.id}`}>
+                <Card className="hover:shadow-lg transition-all hover:-translate-y-1 overflow-hidden group cursor-pointer h-full">
+                  <div className="relative h-36 bg-muted">
+                    {course.thumbnail ? (
+                      <Image src={course.thumbnail} alt={course.title} fill className="object-cover" sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" />
+                    ) : (
+                      <div className="flex items-center justify-center h-full bg-gradient-to-br from-primary/20 to-primary/5">
+                        <BookOpen className="h-10 w-10 text-primary/40" />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                    <Badge variant="secondary" className="absolute top-3 left-3 text-xs">
+                      {course.type}
+                    </Badge>
+                    <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2 text-white text-xs">
+                      <BookOpen className="h-3.5 w-3.5" />
+                      <span>{course._count?.modules || 0} modules</span>
                     </div>
-                  )}
-                </div>
-                <CardContent className="p-4">
-                  <h3 className="font-semibold">{course.title}</h3>
-                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                    {course.description || "No description"}
-                  </p>
-                  <div className="flex items-center justify-between mt-3">
-                    <span className="text-xs text-muted-foreground">
-                      {course._count?.modules || 0} modules
-                    </span>
-                    <Button size="sm" asChild>
-                      <Link href={`/user/courses/${course.id}`}>
-                        View Course
-                      </Link>
-                    </Button>
                   </div>
-                </CardContent>
-              </Card>
+                  <CardContent className="p-4 space-y-2">
+                    <h3 className="font-semibold leading-tight line-clamp-1">{course.title}</h3>
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {course.description || "No description"}
+                    </p>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground pt-1">
+                      <BookOpen className="h-3.5 w-3.5" />
+                      <span>{course._count?.modules || 0} modules</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
         </div>

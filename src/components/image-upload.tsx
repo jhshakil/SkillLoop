@@ -101,7 +101,7 @@ export function ImageUpload({ value, onChange, className }: ImageUploadProps) {
 
         {value ? (
           <div className="relative w-full h-40 rounded-md overflow-hidden bg-muted group">
-            <Image src={value} alt="Thumbnail" fill className="object-cover" />
+            <Image src={value} alt="Thumbnail" fill className="object-cover" sizes="100%" />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
               <button
                 type="button"

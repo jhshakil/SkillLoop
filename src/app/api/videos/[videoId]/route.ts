@@ -14,7 +14,9 @@ const updateVideoSchema = z.object({
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ videoId: string }> }) {
   try {
+    const session = await auth();
     const { videoId } = await params;
+
     const video = await prisma.video.findUnique({
       where: { id: videoId },
       include: {
@@ -29,6 +31,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ vide
 
     if (!video) {
       return NextResponse.json({ error: "Video not found" }, { status: 404 });
+    }
+
+    const role = session?.user?.role;
+    const isAdmin = role === "ADMIN" || role === "SUPER_ADMIN";
+
+    if (!isAdmin && video.status !== "PUBLISHED") {
+      return NextResponse.json({ error: "Video not available" }, { status: 404 });
     }
 
     return NextResponse.json({ data: video });

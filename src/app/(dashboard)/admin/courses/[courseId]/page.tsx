@@ -209,7 +209,7 @@ export default function AdminCourseDetailPage() {
         {/* Thumbnail */}
         {data.thumbnail && (
           <div className="relative w-full h-48 md:h-64 rounded-lg overflow-hidden bg-muted">
-            <Image src={data.thumbnail} alt={data.title} fill className="object-cover" />
+            <Image src={data.thumbnail} alt={data.title} fill className="object-cover" sizes="100vw" priority />
           </div>
         )}
 

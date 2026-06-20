@@ -170,7 +170,7 @@ export default function AdminCoursesPage() {
                 <Card key={course.id} className="hover:shadow-md transition-shadow overflow-hidden">
                   <div className="relative h-40 bg-muted">
                     {course.thumbnail ? (
-                      <Image src={course.thumbnail} alt={course.title} fill className="object-cover" />
+                      <Image src={course.thumbnail} alt={course.title} fill className="object-cover" sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" />
                     ) : (
                       <div className="flex items-center justify-center h-full">
                         <BookOpen className="h-10 w-10 text-muted-foreground/50" />

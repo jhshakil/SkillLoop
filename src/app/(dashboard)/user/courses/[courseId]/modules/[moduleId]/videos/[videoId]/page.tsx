@@ -159,6 +159,27 @@ export default function UserVideoPage() {
     return <DashboardLayout><div className="animate-pulse space-y-4"><div className="h-8 w-64 bg-muted rounded" /><div className="aspect-video bg-muted rounded" /></div></DashboardLayout>;
   }
 
+  if (!video) {
+    return (
+      <DashboardLayout>
+        <div className="space-y-6 max-w-5xl">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" asChild>
+              <Link href={`/user/courses/${courseId}`}>
+                <ArrowLeft className="h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+          <Card className="text-center py-16">
+            <Lock className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Video Not Available</h2>
+            <p className="text-muted-foreground">This video is not available or has been removed.</p>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   const youtubeId = extractYouTubeId(video?.youtubeUrl || "");
 
   if (!isEnrolled && userRole !== "ADMIN" && userRole !== "SUPER_ADMIN") {
@@ -302,11 +323,11 @@ export default function UserVideoPage() {
             <Card>
               <CardContent className="space-y-4 pt-4">
                 <Textarea
+                  key={note?.id || "new"}
                   placeholder="Write your notes here..."
-                  value={noteContent}
+                  defaultValue={note?.content || ""}
                   onChange={(e) => setNoteContent(e.target.value)}
                   className="min-h-[200px]"
-                  defaultValue={note?.content || ""}
                 />
                 <Button onClick={() => noteMutation.mutate({ content: noteContent, videoId })} disabled={noteMutation.isPending}>
                   Save Notes
