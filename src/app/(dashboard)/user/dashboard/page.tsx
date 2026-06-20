@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BookOpen, FileText, TrendingUp, Play, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { formatDate } from "@/lib/utils";
 import apiClient from "@/lib/api-client";
 import type { EnrollmentItem, NoteWithVideo } from "@/types";
@@ -86,7 +87,21 @@ export default function UserDashboardPage() {
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {enrollments?.map((enrollment) => (
-              <Card key={enrollment.id} className="hover:shadow-md transition-shadow">
+              <Card key={enrollment.id} className="hover:shadow-md transition-shadow overflow-hidden">
+                <div className="relative h-32 bg-muted">
+                  {enrollment.course.thumbnail ? (
+                    <Image
+                      src={enrollment.course.thumbnail}
+                      alt={enrollment.course.title}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <BookOpen className="h-8 w-8 text-muted-foreground/50" />
+                    </div>
+                  )}
+                </div>
                 <CardContent className="p-4">
                   <h3 className="font-semibold">{enrollment.course.title}</h3>
                   <p className="text-sm text-muted-foreground mt-1">
@@ -152,8 +167,17 @@ export default function UserDashboardPage() {
         <div id="explore">
           <h2 className="text-lg font-semibold mb-4">Explore Courses</h2>
           <div className="grid gap-4 md:grid-cols-3">
-            {courses?.map((course: { id: string; title: string; description: string | null; status: string; type: string; _count?: { modules: number } }) => (
-              <Card key={course.id} className="hover:shadow-md transition-shadow">
+            {courses?.map((course: { id: string; title: string; description: string | null; thumbnail: string | null; status: string; type: string; _count?: { modules: number } }) => (
+              <Card key={course.id} className="hover:shadow-md transition-shadow overflow-hidden">
+                <div className="relative h-32 bg-muted">
+                  {course.thumbnail ? (
+                    <Image src={course.thumbnail} alt={course.title} fill className="object-cover" />
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <BookOpen className="h-8 w-8 text-muted-foreground/50" />
+                    </div>
+                  )}
+                </div>
                 <CardContent className="p-4">
                   <h3 className="font-semibold">{course.title}</h3>
                   <p className="text-sm text-muted-foreground mt-1 line-clamp-2">

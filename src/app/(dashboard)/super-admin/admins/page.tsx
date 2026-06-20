@@ -298,10 +298,10 @@ export default function SuperAdminAdminsPage() {
                   </div>
                 </div>
               )}
-              <div className="space-y-2">
+              <div>
                 <Label>Role</Label>
-                <Select value={newRole} onValueChange={setNewRole}>
-                  <SelectTrigger>
+                <Select  value={newRole} onValueChange={setNewRole}>
+                  <SelectTrigger className="mt-2">
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>

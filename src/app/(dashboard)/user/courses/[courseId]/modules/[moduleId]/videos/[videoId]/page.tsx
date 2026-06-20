@@ -235,9 +235,9 @@ export default function UserVideoPage() {
           <div className="flex items-center justify-between">
             <p className="text-muted-foreground">{video?.description || ""}</p>
             {(userRole === "ADMIN" || userRole === "SUPER_ADMIN") && (
-              <div className="flex items-center gap-2">
-                <Switch checked={video?.commentsEnabled} onCheckedChange={toggleCommentMutation.mutate} />
-                <Label className="text-xs">Comments</Label>
+              <div>
+                <Label className="text-xs mb-2">Comments</Label>
+                <Switch className="mt-2"  checked={video?.commentsEnabled} onCheckedChange={toggleCommentMutation.mutate} />
               </div>
             )}
           </div>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import Image from "next/image";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -79,7 +80,21 @@ export default function UserCoursesPage() {
             {filtered.length > 0 ? (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {filtered.map((enrollment) => (
-                  <Card key={enrollment.id} className="hover:shadow-md transition-shadow">
+                  <Card key={enrollment.id} className="hover:shadow-md transition-shadow overflow-hidden">
+                    <div className="relative h-40 bg-muted">
+                      {enrollment.course.thumbnail ? (
+                        <Image
+                          src={enrollment.course.thumbnail}
+                          alt={enrollment.course.title}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-full">
+                          <BookOpen className="h-10 w-10 text-muted-foreground/50" />
+                        </div>
+                      )}
+                    </div>
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">

@@ -115,9 +115,9 @@ export default function UserSettingsPage() {
               {user?.email && !user.email.includes("google") ? (
                 <CardContent>
                   <form onSubmit={onChangePassword} className="space-y-4">
-                    <div className="space-y-2">
+                    <div>
                       <Label htmlFor="current-password">Current Password</Label>
-                      <div className="relative">
+                      <div className="relative mt-2" >
                         <Input
                           id="current-password"
                           type={showCurrent ? "text" : "password"}
@@ -137,9 +137,9 @@ export default function UserSettingsPage() {
                         </Button>
                       </div>
                     </div>
-                    <div className="space-y-2">
+                    <div>
                       <Label htmlFor="new-password">New Password</Label>
-                      <div className="relative">
+                      <div className="relative mt-2" >
                         <Input
                           id="new-password"
                           type={showNew ? "text" : "password"}
@@ -160,9 +160,9 @@ export default function UserSettingsPage() {
                         </Button>
                       </div>
                     </div>
-                    <div className="space-y-2">
+                    <div>
                       <Label htmlFor="confirm-password">Confirm New Password</Label>
-                      <Input
+                      <Input className="mt-2" 
                         id="confirm-password"
                         type="password"
                         value={passwordData.confirmPassword}

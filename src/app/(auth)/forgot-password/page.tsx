@@ -112,9 +112,9 @@ export default function ForgotPasswordPage() {
         <CardContent className="space-y-4">
           {step === "email" && (
             <form onSubmit={onSendOtp} className="space-y-4">
-              <div className="space-y-2">
+              <div>
                 <Label htmlFor="email">Email</Label>
-                <Input
+                <Input className="mt-2" 
                   id="email"
                   type="email"
                   value={email}
@@ -159,9 +159,9 @@ export default function ForgotPasswordPage() {
 
           {step === "reset" && (
             <form onSubmit={onResetPassword} className="space-y-4">
-              <div className="space-y-2">
+              <div>
                 <Label htmlFor="new-password">New Password</Label>
-                <div className="relative">
+                <div className="relative mt-2" >
                   <Input
                     id="new-password"
                     type={showPassword ? "text" : "password"}
@@ -182,9 +182,9 @@ export default function ForgotPasswordPage() {
                   </Button>
                 </div>
               </div>
-              <div className="space-y-2">
+              <div>
                 <Label htmlFor="confirm-password">Confirm Password</Label>
-                <Input
+                <Input className="mt-2" 
                   id="confirm-password"
                   type={showPassword ? "text" : "password"}
                   value={confirmPassword}

@@ -145,9 +145,9 @@ export default function RegisterPage() {
           {step === "form" ? (
             <>
               <form onSubmit={onSendOtp} className="space-y-4">
-                <div className="space-y-2">
+                <div>
                   <Label htmlFor="name">Full Name</Label>
-                  <Input
+                  <Input className="mt-2" 
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -156,9 +156,9 @@ export default function RegisterPage() {
                     disabled={isLoading}
                   />
                 </div>
-                <div className="space-y-2">
+                <div>
                   <Label htmlFor="email">Email</Label>
-                  <Input
+                  <Input className="mt-2" 
                     id="email"
                     type="email"
                     value={formData.email}
@@ -168,9 +168,9 @@ export default function RegisterPage() {
                     disabled={isLoading}
                   />
                 </div>
-                <div className="space-y-2">
+                <div>
                   <Label htmlFor="password">Password</Label>
-                  <div className="relative">
+                  <div className="relative mt-2" >
                     <Input
                       id="password"
                       type={showPassword ? "text" : "password"}
@@ -191,9 +191,9 @@ export default function RegisterPage() {
                     </Button>
                   </div>
                 </div>
-                <div className="space-y-2">
+                <div>
                   <Label htmlFor="confirm-password">Confirm Password</Label>
-                  <Input
+                  <Input className="mt-2" 
                     id="confirm-password"
                     type={showPassword ? "text" : "password"}
                     value={formData.confirmPassword}

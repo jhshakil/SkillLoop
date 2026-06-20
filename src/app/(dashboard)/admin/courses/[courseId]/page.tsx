@@ -18,7 +18,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Play, Plus, Edit, Trash2, ArrowLeft } from "lucide-react";
 import { formatDate, getStatusBadgeColor, extractYouTubeId } from "@/lib/utils";
@@ -27,6 +33,7 @@ import { toast } from "sonner";
 import Link from "next/link";
 import type { CourseWithModules } from "@/types";
 import Image from "next/image";
+import { ImageUpload } from "@/components/image-upload";
 
 export default function AdminCourseDetailPage() {
   const params = useParams();
@@ -34,7 +41,13 @@ export default function AdminCourseDetailPage() {
   const queryClient = useQueryClient();
 
   const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState({ title: "", description: "", thumbnail: "", type: "PUBLIC" as "PUBLIC" | "PRIVATE", status: "DRAFT" as "DRAFT" | "PUBLISHED" });
+  const [editData, setEditData] = useState({
+    title: "",
+    description: "",
+    thumbnail: "",
+    type: "PUBLIC" as "PUBLIC" | "PRIVATE",
+    status: "DRAFT" as "DRAFT" | "PUBLISHED",
+  });
   const [isModuleOpen, setIsModuleOpen] = useState(false);
   const [newModuleTitle, setNewModuleTitle] = useState("");
   const [isVideoOpen, setIsVideoOpen] = useState(false);
@@ -55,7 +68,13 @@ export default function AdminCourseDetailPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data: { title?: string; description?: string | null; thumbnail?: string | null; type?: "PUBLIC" | "PRIVATE"; status?: "DRAFT" | "PUBLISHED" }) => apiClient.patch(`/courses/${courseId}`, data),
+    mutationFn: (data: {
+      title?: string;
+      description?: string | null;
+      thumbnail?: string | null;
+      type?: "PUBLIC" | "PRIVATE";
+      status?: "DRAFT" | "PUBLISHED";
+    }) => apiClient.patch(`/courses/${courseId}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["course", courseId] });
       setIsEditing(false);
@@ -88,7 +107,12 @@ export default function AdminCourseDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["course", courseId] });
       setIsVideoOpen(false);
-      setNewVideo({ title: "", youtubeUrl: "", description: "", commentsEnabled: true });
+      setNewVideo({
+        title: "",
+        youtubeUrl: "",
+        description: "",
+        commentsEnabled: true,
+      });
       toast.success("Video added");
     },
   });
@@ -110,11 +134,24 @@ export default function AdminCourseDetailPage() {
   });
 
   if (isLoading) {
-    return <DashboardLayout><div className="animate-pulse space-y-4"><div className="h-8 w-48 bg-muted rounded" /><div className="h-64 bg-muted rounded" /></div></DashboardLayout>;
+    return (
+      <DashboardLayout>
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 w-48 bg-muted rounded" />
+          <div className="h-64 bg-muted rounded" />
+        </div>
+      </DashboardLayout>
+    );
   }
 
   if (!data) {
-    return <DashboardLayout><Card className="text-center py-12"><p>Course not found</p></Card></DashboardLayout>;
+    return (
+      <DashboardLayout>
+        <Card className="text-center py-12">
+          <p>Course not found</p>
+        </Card>
+      </DashboardLayout>
+    );
   }
 
   return (
@@ -122,24 +159,41 @@ export default function AdminCourseDetailPage() {
       <div className="space-y-6">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
-            <Link href="/admin/courses"><ArrowLeft className="h-4 w-4" /></Link>
+            <Link href="/admin/courses">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
           </Button>
           <div className="flex-1">
             <h1 className="text-2xl font-bold">{data.title}</h1>
             <div className="flex items-center gap-2 mt-1">
-              <Badge className={getStatusBadgeColor(data.status)}>{data.status}</Badge>
+              <Badge className={getStatusBadgeColor(data.status)}>
+                {data.status}
+              </Badge>
               <Badge variant="outline">{data.type}</Badge>
               <span className="text-sm text-muted-foreground">
                 Created by {data.creator.name} on {formatDate(data.createdAt)}
               </span>
             </div>
           </div>
-          <Button onClick={() => { setEditData({ title: data.title, description: data.description || "", thumbnail: data.thumbnail || "", type: data.type, status: data.status }); setIsEditing(true); }}>
+          <Button
+            onClick={() => {
+              setEditData({
+                title: data.title,
+                description: data.description || "",
+                thumbnail: data.thumbnail || "",
+                type: data.type,
+                status: data.status,
+              });
+              setIsEditing(true);
+            }}
+          >
             <Edit className="mr-2 h-4 w-4" /> Edit
           </Button>
         </div>
 
-        <p className="text-muted-foreground">{data.description || "No description"}</p>
+        <p className="text-muted-foreground">
+          {data.description || "No description"}
+        </p>
 
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Modules</h2>
@@ -164,7 +218,10 @@ export default function AdminCourseDetailPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => { setSelectedModuleId(mod.id); setIsVideoOpen(true); }}
+                    onClick={() => {
+                      setSelectedModuleId(mod.id);
+                      setIsVideoOpen(true);
+                    }}
                   >
                     <Plus className="mr-2 h-4 w-4" /> Add Video
                   </Button>
@@ -172,7 +229,8 @@ export default function AdminCourseDetailPage() {
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      if (confirm("Delete this module?")) deleteModuleMutation.mutate(mod.id);
+                      if (confirm("Delete this module?"))
+                        deleteModuleMutation.mutate(mod.id);
                     }}
                   >
                     <Trash2 className="h-4 w-4 text-destructive" />
@@ -185,13 +243,13 @@ export default function AdminCourseDetailPage() {
                     <CardContent className="flex items-center gap-4 p-4">
                       <div className="relative w-40 h-24 rounded-md overflow-hidden shrink-0 bg-muted">
                         {extractYouTubeId(video.youtubeUrl) && (
-                            <Image
-                              src={`https://img.youtube.com/vi/${extractYouTubeId(video.youtubeUrl)}/mqdefault.jpg`}
-                              alt={video.title}
-                              width={160}
-                              height={96}
-                              className="w-full h-full object-cover"
-                            />
+                          <Image
+                            src={`https://img.youtube.com/vi/${extractYouTubeId(video.youtubeUrl)}/mqdefault.jpg`}
+                            alt={video.title}
+                            width={160}
+                            height={96}
+                            className="w-full h-full object-cover"
+                          />
                         )}
                         <div className="absolute inset-0 flex items-center justify-center bg-black/20">
                           <Play className="h-6 w-6 text-white" />
@@ -203,12 +261,19 @@ export default function AdminCourseDetailPage() {
                           {video.description || "No description"}
                         </p>
                         <div className="flex items-center gap-2 mt-1">
-                          <Badge className={getStatusBadgeColor(video.status)}>{video.status}</Badge>
+                          <Badge className={getStatusBadgeColor(video.status)}>
+                            {video.status}
+                          </Badge>
                           {video.status === "DRAFT" ? (
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => updateVideoStatusMutation.mutate({ id: video.id, status: "PUBLISHED" })}
+                              onClick={() =>
+                                updateVideoStatusMutation.mutate({
+                                  id: video.id,
+                                  status: "PUBLISHED",
+                                })
+                              }
                             >
                               Publish
                             </Button>
@@ -216,12 +281,21 @@ export default function AdminCourseDetailPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => updateVideoStatusMutation.mutate({ id: video.id, status: "DRAFT" })}
+                              onClick={() =>
+                                updateVideoStatusMutation.mutate({
+                                  id: video.id,
+                                  status: "DRAFT",
+                                })
+                              }
                             >
                               Unpublish
                             </Button>
                           )}
-                          <Badge variant={video.commentsEnabled ? "success" : "outline"}>
+                          <Badge
+                            variant={
+                              video.commentsEnabled ? "success" : "outline"
+                            }
+                          >
                             Comments {video.commentsEnabled ? "On" : "Off"}
                           </Badge>
                         </div>
@@ -230,7 +304,8 @@ export default function AdminCourseDetailPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          if (confirm("Delete this video?")) deleteVideoMutation.mutate(video.id);
+                          if (confirm("Delete this video?"))
+                            deleteVideoMutation.mutate(video.id);
                         }}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
@@ -243,7 +318,9 @@ export default function AdminCourseDetailPage() {
           ))}
           {data.modules.length === 0 && (
             <Card className="text-center py-8">
-              <p className="text-muted-foreground">No modules yet. Add your first module!</p>
+              <p className="text-muted-foreground">
+                No modules yet. Add your first module!
+              </p>
             </Card>
           )}
         </Tabs>
@@ -251,30 +328,65 @@ export default function AdminCourseDetailPage() {
         {/* Edit Course Dialog */}
         <Dialog open={isEditing} onOpenChange={setIsEditing}>
           <DialogContent>
-            <DialogHeader><DialogTitle>Edit Course</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle>Edit Course</DialogTitle>
+            </DialogHeader>
             <div className="space-y-4">
-              <div className="space-y-2">
+              <div>
                 <Label>Title</Label>
-                <Input value={editData.title} onChange={(e) => setEditData({ ...editData, title: e.target.value })} />
+                <Input className="mt-2" 
+                  value={editData.title}
+                  onChange={(e) =>
+                    setEditData({ ...editData, title: e.target.value })
+                  }
+                />
               </div>
-              <div className="space-y-2">
+              <div>
                 <Label>Description</Label>
-                <Textarea value={editData.description} onChange={(e) => setEditData({ ...editData, description: e.target.value })} />
+                <Textarea className="mt-2" 
+                  value={editData.description}
+                  onChange={(e) =>
+                    setEditData({ ...editData, description: e.target.value })
+                  }
+                />
               </div>
-              <div className="space-y-2">
+              <div>
+                <Label>Thumbnail</Label>
+                <ImageUpload className="mt-2" 
+                  value={editData.thumbnail}
+                  onChange={(url) =>
+                    setEditData({ ...editData, thumbnail: url })
+                  }
+                />
+              </div>
+              <div>
                 <Label>Type</Label>
-                <Select value={editData.type} onValueChange={(v: "PUBLIC" | "PRIVATE") => setEditData({ ...editData, type: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select 
+                  value={editData.type}
+                  onValueChange={(v: "PUBLIC" | "PRIVATE") =>
+                    setEditData({ ...editData, type: v })
+                  }
+                >
+                  <SelectTrigger className="mt-2">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="PUBLIC">Public</SelectItem>
                     <SelectItem value="PRIVATE">Private</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
+              <div>
                 <Label>Status</Label>
-                <Select value={editData.status} onValueChange={(v: "DRAFT" | "PUBLISHED") => setEditData({ ...editData, status: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select 
+                  value={editData.status}
+                  onValueChange={(v: "DRAFT" | "PUBLISHED") =>
+                    setEditData({ ...editData, status: v })
+                  }
+                >
+                  <SelectTrigger className="mt-2">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="DRAFT">Draft</SelectItem>
                     <SelectItem value="PUBLISHED">Published</SelectItem>
@@ -283,7 +395,12 @@ export default function AdminCourseDetailPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button onClick={() => updateMutation.mutate(editData)} disabled={updateMutation.isPending}>Save</Button>
+              <Button
+                onClick={() => updateMutation.mutate(editData)}
+                disabled={updateMutation.isPending}
+              >
+                Save
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -291,15 +408,28 @@ export default function AdminCourseDetailPage() {
         {/* Add Module Dialog */}
         <Dialog open={isModuleOpen} onOpenChange={setIsModuleOpen}>
           <DialogContent>
-            <DialogHeader><DialogTitle>Add Module</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle>Add Module</DialogTitle>
+            </DialogHeader>
             <div className="space-y-4">
-              <div className="space-y-2">
+              <div>
                 <Label>Module Title</Label>
-                <Input value={newModuleTitle} onChange={(e) => setNewModuleTitle(e.target.value)} placeholder="e.g., Introduction to React" />
+                <Input className="mt-2" 
+                  value={newModuleTitle}
+                  onChange={(e) => setNewModuleTitle(e.target.value)}
+                  placeholder="e.g., Introduction to React"
+                />
               </div>
             </div>
             <DialogFooter>
-              <Button onClick={() => addModuleMutation.mutate({ title: newModuleTitle, courseId })} disabled={!newModuleTitle}>Add</Button>
+              <Button
+                onClick={() =>
+                  addModuleMutation.mutate({ title: newModuleTitle, courseId })
+                }
+                disabled={!newModuleTitle}
+              >
+                Add
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -307,27 +437,62 @@ export default function AdminCourseDetailPage() {
         {/* Add Video Dialog */}
         <Dialog open={isVideoOpen} onOpenChange={setIsVideoOpen}>
           <DialogContent>
-            <DialogHeader><DialogTitle>Add Video</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle>Add Video</DialogTitle>
+            </DialogHeader>
             <div className="space-y-4">
-              <div className="space-y-2">
+              <div>
                 <Label>Video Title</Label>
-                <Input value={newVideo.title} onChange={(e) => setNewVideo({ ...newVideo, title: e.target.value })} placeholder="Video title" />
+                <Input className="mt-2" 
+                  value={newVideo.title}
+                  onChange={(e) =>
+                    setNewVideo({ ...newVideo, title: e.target.value })
+                  }
+                  placeholder="Video title"
+                />
               </div>
-              <div className="space-y-2">
+              <div>
                 <Label>YouTube URL</Label>
-                <Input value={newVideo.youtubeUrl} onChange={(e) => setNewVideo({ ...newVideo, youtubeUrl: e.target.value })} placeholder="https://youtube.com/watch?v=..." />
+                <Input className="mt-2" 
+                  value={newVideo.youtubeUrl}
+                  onChange={(e) =>
+                    setNewVideo({ ...newVideo, youtubeUrl: e.target.value })
+                  }
+                  placeholder="https://youtube.com/watch?v=..."
+                />
               </div>
-              <div className="space-y-2">
+              <div>
                 <Label>Description (Optional)</Label>
-                <Textarea value={newVideo.description} onChange={(e) => setNewVideo({ ...newVideo, description: e.target.value })} placeholder="Optional video description" />
+                <Textarea className="mt-2" 
+                  value={newVideo.description}
+                  onChange={(e) =>
+                    setNewVideo({ ...newVideo, description: e.target.value })
+                  }
+                  placeholder="Optional video description"
+                />
               </div>
-              <div className="flex items-center gap-2">
-                <Switch checked={newVideo.commentsEnabled} onCheckedChange={(v) => setNewVideo({ ...newVideo, commentsEnabled: v })} />
+              <div>
                 <Label>Enable Comments</Label>
+                <Switch className="mt-2" 
+                  checked={newVideo.commentsEnabled}
+                  onCheckedChange={(v) =>
+                    setNewVideo({ ...newVideo, commentsEnabled: v })
+                  }
+                />
               </div>
             </div>
             <DialogFooter>
-              <Button onClick={() => addVideoMutation.mutate({ ...newVideo, moduleId: selectedModuleId })} disabled={!newVideo.title || !newVideo.youtubeUrl}>Add Video</Button>
+              <Button
+                onClick={() =>
+                  addVideoMutation.mutate({
+                    ...newVideo,
+                    moduleId: selectedModuleId,
+                  })
+                }
+                disabled={!newVideo.title || !newVideo.youtubeUrl}
+              >
+                Add Video
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

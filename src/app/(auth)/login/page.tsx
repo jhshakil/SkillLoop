@@ -69,9 +69,9 @@ function LoginForm() {
         </CardHeader>
         <CardContent className="space-y-4">
           <form onSubmit={onSubmit} className="space-y-4">
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="email">Email</Label>
-              <Input
+              <Input className="mt-2" 
                 id="email"
                 name="email"
                 type="email"
@@ -80,9 +80,9 @@ function LoginForm() {
                 disabled={isLoading}
               />
             </div>
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="password">Password</Label>
-              <div className="relative">
+              <div className="relative mt-2" >
                 <Input
                   id="password"
                   name="password"

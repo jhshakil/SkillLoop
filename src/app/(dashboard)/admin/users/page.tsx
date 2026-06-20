@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -122,7 +123,7 @@ export default function AdminUsersPage() {
           </div>
         ) : (
           <>
-            <div className="space-y-2">
+            <div>
               {data?.data.map((user: UserItem) => (
                 <Card key={user.id} className="hover:shadow-sm transition-shadow">
                   <CardContent className="flex items-center gap-4 p-4">
@@ -196,8 +197,10 @@ export default function AdminUsersPage() {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
-              <Select value={newRole} onValueChange={setNewRole}>
-                <SelectTrigger>
+              <div>
+                <Label>Role</Label>
+                <Select  value={newRole} onValueChange={setNewRole}>
+                <SelectTrigger className="mt-2">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -207,6 +210,7 @@ export default function AdminUsersPage() {
                   {isSuperAdmin && <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>}
                 </SelectContent>
               </Select>
+              </div>
               {!isSuperAdmin && newRole === "ADMIN" && (
                 <p className="text-sm text-destructive">
                   Only Super Admin can assign Admin role.

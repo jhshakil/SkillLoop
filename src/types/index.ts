@@ -174,6 +174,7 @@ export interface EnrollmentItem {
   course: {
     id: string;
     title: string;
+    thumbnail: string | null;
   };
 }
 

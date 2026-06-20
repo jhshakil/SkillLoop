@@ -24,6 +24,8 @@ import { formatDate, getStatusBadgeColor } from "@/lib/utils";
 import apiClient from "@/lib/api-client";
 import { toast } from "sonner";
 import type { CourseWithModules, PaginatedResponse } from "@/types";
+import { ImageUpload } from "@/components/image-upload";
+import Image from "next/image";
 
 export default function AdminCoursesPage() {
   const [search, setSearch] = useState("");
@@ -32,6 +34,7 @@ export default function AdminCoursesPage() {
   const [newCourse, setNewCourse] = useState({
     title: "",
     description: "",
+    thumbnail: "",
     type: "PUBLIC" as "PUBLIC" | "PRIVATE",
   });
   const queryClient = useQueryClient();
@@ -51,7 +54,7 @@ export default function AdminCoursesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-courses"] });
       setIsCreateOpen(false);
-      setNewCourse({ title: "", description: "", type: "PUBLIC" });
+      setNewCourse({ title: "", description: "", thumbnail: "", type: "PUBLIC" });
       toast.success("Course created");
     },
     onError: () => toast.error("Failed to create course"),
@@ -85,29 +88,36 @@ export default function AdminCoursesPage() {
                 <DialogTitle>Create New Course</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 py-4">
-                <div className="space-y-2">
+                <div>
                   <Label>Title</Label>
-                  <Input
+                  <Input className="mt-2" 
                     value={newCourse.title}
                     onChange={(e) => setNewCourse({ ...newCourse, title: e.target.value })}
                     placeholder="Course title"
                   />
                 </div>
-                <div className="space-y-2">
+                <div>
                   <Label>Description</Label>
-                  <Textarea
+                  <Textarea className="mt-2" 
                     value={newCourse.description}
                     onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })}
                     placeholder="Course description"
                   />
                 </div>
-                <div className="space-y-2">
+                <div>
+                  <Label>Thumbnail</Label>
+                  <ImageUpload className="mt-2" 
+                    value={newCourse.thumbnail}
+                    onChange={(url) => setNewCourse({ ...newCourse, thumbnail: url })}
+                  />
+                </div>
+                <div>
                   <Label>Type</Label>
-                  <Select
+                  <Select 
                     value={newCourse.type}
                     onValueChange={(v: "PUBLIC" | "PRIVATE") => setNewCourse({ ...newCourse, type: v })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="mt-2">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -157,8 +167,17 @@ export default function AdminCoursesPage() {
           <>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {data?.data.map((course) => (
-                <Card key={course.id} className="hover:shadow-md transition-shadow">
-                  <CardHeader>
+                <Card key={course.id} className="hover:shadow-md transition-shadow overflow-hidden">
+                  <div className="relative h-40 bg-muted">
+                    {course.thumbnail ? (
+                      <Image src={course.thumbnail} alt={course.title} fill className="object-cover" />
+                    ) : (
+                      <div className="flex items-center justify-center h-full">
+                        <BookOpen className="h-10 w-10 text-muted-foreground/50" />
+                      </div>
+                    )}
+                  </div>
+                  <CardHeader className={course.thumbnail ? "pt-4" : ""}>
                     <div className="flex items-start justify-between">
                       <div>
                         <CardTitle className="text-lg">{course.title}</CardTitle>

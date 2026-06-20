@@ -118,6 +118,17 @@ export default function UserCourseDetailPage() {
           )}
         </div>
 
+        {/* Thumbnail */}
+        <div className="relative w-full h-48 md:h-64 rounded-lg overflow-hidden bg-muted">
+          {course.thumbnail ? (
+            <Image src={course.thumbnail} alt={course.title} fill className="object-cover" />
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <BookOpen className="h-16 w-16 text-muted-foreground/30" />
+            </div>
+          )}
+        </div>
+
         {/* Description */}
         {course.description && (
           <Card>
