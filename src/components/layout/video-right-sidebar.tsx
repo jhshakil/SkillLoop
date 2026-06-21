@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, HelpCircle, Check, X } from "lucide-react";
+import { FileText, HelpCircle, Check, X, Loader2 } from "lucide-react";
 import apiClient from "@/lib/api-client";
 import { toast } from "sonner";
 
@@ -30,7 +30,6 @@ export function VideoRightSidebar({ embedded, onNavigate }: VideoRightSidebarPro
   const segments = pathname.split("/");
   const videoId = segments[segments.length - 1];
 
-  // Only show on video pages (path includes /videos/)
   if (!pathname.includes("/videos/")) {
     return null;
   }
@@ -42,6 +41,7 @@ function VideoRightSidebarContent({ videoId, embedded }: { videoId: string; embe
   const queryClient = useQueryClient();
   const [noteContent, setNoteContent] = useState("");
   const [mcqAnswers, setMcqAnswers] = useState<Record<string, number>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: note } = useQuery({
     queryKey: ["note", videoId],
@@ -68,13 +68,37 @@ function VideoRightSidebarContent({ videoId, embedded }: { videoId: string; embe
     onError: () => toast.error("Failed to save note"),
   });
 
-  const mcqSubmitMutation = useMutation({
-    mutationFn: (data: { questionId: string; selectedAnswer: number }) =>
-      apiClient.post("/mcqs/submit", data),
-    onSuccess: () => {
+  const mcqs = mcqQuestions || [];
+
+  const unanswered = mcqs.filter(
+    (q: MCQQuestionData) => !q.submissions?.length && mcqAnswers[q.id] !== undefined
+  );
+
+  const allSubmitted = mcqs.length > 0 && mcqs.every((q: MCQQuestionData) => q.submissions?.length);
+
+  async function handleSubmitAll() {
+    if (unanswered.length === 0) return;
+    setIsSubmitting(true);
+    try {
+      await apiClient.post("/mcqs/submit-bulk", {
+        answers: unanswered.map((q: MCQQuestionData) => ({
+          questionId: q.id,
+          selectedAnswer: mcqAnswers[q.id],
+        })),
+      });
       queryClient.invalidateQueries({ queryKey: ["mcqs", videoId] });
-    },
-  });
+      setMcqAnswers({});
+      toast.success(`Submitted ${unanswered.length} answer${unanswered.length > 1 ? "s" : ""}`);
+    } catch {
+      toast.error("Failed to submit");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  const answeredCount = mcqs.filter(
+    (q: MCQQuestionData) => q.submissions?.length || mcqAnswers[q.id] !== undefined
+  ).length;
 
   return (
     <aside className={`${embedded ? "w-full" : "w-[340px]"} border-l bg-background flex flex-col h-full shrink-0`}>
@@ -89,7 +113,7 @@ function VideoRightSidebarContent({ videoId, embedded }: { videoId: string; embe
               <FileText className="mr-1.5 h-3.5 w-3.5" /> Notes
             </TabsTrigger>
             <TabsTrigger value="mcq" className="text-xs">
-              <HelpCircle className="mr-1.5 h-3.5 w-3.5" /> Quiz ({mcqQuestions?.length || 0})
+              <HelpCircle className="mr-1.5 h-3.5 w-3.5" /> Quiz ({mcqs.length})
             </TabsTrigger>
           </TabsList>
 
@@ -113,27 +137,45 @@ function VideoRightSidebarContent({ videoId, embedded }: { videoId: string; embe
             </div>
           </TabsContent>
 
-          <TabsContent value="mcq" className="flex-1 overflow-y-auto p-4 mt-0 data-[state=inactive]:hidden">
-            <div className="space-y-4">
-              {mcqQuestions?.length === 0 ? (
+          <TabsContent value="mcq" className="flex-1 overflow-y-auto mt-0 data-[state=inactive]:hidden">
+            <div className="p-4 space-y-4">
+              {mcqs.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">
                   No quiz questions for this video.
                 </p>
               ) : (
-                mcqQuestions?.map((q: MCQQuestionData) => (
-                  <MCQMiniCard
-                    key={q.id}
-                    question={q}
-                    selectedAnswer={mcqAnswers[q.id]}
-                    onSelect={(answer) => setMcqAnswers({ ...mcqAnswers, [q.id]: answer })}
-                    onSubmit={() =>
-                      mcqSubmitMutation.mutate({
-                        questionId: q.id,
-                        selectedAnswer: mcqAnswers[q.id],
-                      })
-                    }
-                  />
-                ))
+                <>
+                  {mcqs.map((q: MCQQuestionData, idx: number) => (
+                    <MCQMiniCard
+                      key={q.id}
+                      index={idx + 1}
+                      question={q}
+                      selectedAnswer={mcqAnswers[q.id]}
+                      onSelect={(answer) => setMcqAnswers({ ...mcqAnswers, [q.id]: answer })}
+                    />
+                  ))}
+
+                  {!allSubmitted && (
+                    <Button
+                      className="w-full"
+                      onClick={handleSubmitAll}
+                      disabled={isSubmitting || unanswered.length === 0}
+                    >
+                      {isSubmitting ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Check className="mr-2 h-4 w-4" />
+                      )}
+                      Submit {unanswered.length > 0 ? `(${unanswered.length})` : "All"} Answers
+                    </Button>
+                  )}
+
+                  {allSubmitted && (
+                    <p className="text-xs text-center text-muted-foreground py-2">
+                      All questions answered — {answeredCount}/{mcqs.length} submitted
+                    </p>
+                  )}
+                </>
               )}
             </div>
           </TabsContent>
@@ -145,14 +187,14 @@ function VideoRightSidebarContent({ videoId, embedded }: { videoId: string; embe
 
 function MCQMiniCard({
   question,
+  index,
   selectedAnswer,
   onSelect,
-  onSubmit,
 }: {
   question: MCQQuestionData;
+  index: number;
   selectedAnswer: number | undefined;
   onSelect: (answer: number) => void;
-  onSubmit: () => void;
 }) {
   const submission = question.submissions?.[0];
   const isSubmitted = !!submission;
@@ -160,7 +202,10 @@ function MCQMiniCard({
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">{question.question}</CardTitle>
+        <CardTitle className="text-sm font-medium">
+          <span className="text-xs text-muted-foreground mr-1">{index}.</span>
+          {question.question}
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-1.5">
         {question.options.map((option: string, i: number) => {
@@ -197,24 +242,13 @@ function MCQMiniCard({
           );
         })}
 
-        {!isSubmitted && (
-          <Button
-            size="sm"
-            onClick={onSubmit}
-            disabled={selectedAnswer === undefined}
-            className="w-full mt-2"
-          >
-            Submit
-          </Button>
-        )}
-
         {isSubmitted && submission.isCorrect && (
-          <p className="text-xs text-success font-medium">Correct!</p>
+          <p className="text-xs text-success font-medium mt-1">Correct!</p>
         )}
         {isSubmitted && !submission.isCorrect && (
-          <div className="text-xs text-muted-foreground">
+          <div className="text-xs text-muted-foreground mt-1">
             <p>
-              Answer:{" "}
+              Correct:{" "}
               <span className="text-success font-medium">
                 {String.fromCharCode(65 + question.correctAnswer)}.{" "}
                 {question.options[question.correctAnswer]}

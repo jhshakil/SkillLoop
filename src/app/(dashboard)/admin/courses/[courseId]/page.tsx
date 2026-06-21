@@ -26,7 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Play, Plus, Edit, Trash2, ArrowLeft, Film, BookOpen } from "lucide-react";
+import { Play, Plus, Edit, Trash2, ArrowLeft, Film, BookOpen, HelpCircle } from "lucide-react";
 import { formatDate, getStatusBadgeColor, extractYouTubeId } from "@/lib/utils";
 import apiClient from "@/lib/api-client";
 import { toast } from "sonner";
@@ -332,6 +332,10 @@ export default function AdminCourseDetailPage() {
                               </Badge>
                               <Badge variant={video.commentsEnabled ? "default" : "outline"} className="text-xs">
                                 {video.commentsEnabled ? "Comments On" : "Comments Off"}
+                              </Badge>
+                              <Badge variant="outline" className="text-xs">
+                                <HelpCircle className="h-3 w-3 mr-1" />
+                                {video._count?.mcqQuestions ?? 0} MCQs
                               </Badge>
                             </div>
                           </div>

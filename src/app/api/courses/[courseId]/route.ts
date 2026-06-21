@@ -21,7 +21,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ cour
         modules: {
           orderBy: { order: "asc" },
           include: {
-            videos: { orderBy: { order: "asc" } },
+            videos: {
+              orderBy: { order: "asc" },
+              include: { _count: { select: { mcqQuestions: true } } },
+            },
           },
         },
         _count: { select: { enrollments: true } },

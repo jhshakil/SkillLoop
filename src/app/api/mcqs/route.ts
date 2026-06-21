@@ -15,6 +15,7 @@ const createMCQSchema = z.object({
 
 export async function GET(req: NextRequest) {
   try {
+    const session = await auth();
     const { searchParams } = new URL(req.url);
     const videoId = searchParams.get("videoId");
     const status = searchParams.get("status");
@@ -26,7 +27,12 @@ export async function GET(req: NextRequest) {
     const questions = await prisma.mCQQuestion.findMany({
       where,
       orderBy: { order: "asc" },
-      include: { video: { select: { id: true, title: true } } },
+      include: {
+        video: { select: { id: true, title: true } },
+        submissions: session?.user?.id
+          ? { where: { userId: session.user.id }, select: { selectedAnswer: true, isCorrect: true } }
+          : false,
+      },
     });
 
     return NextResponse.json({ data: questions });
@@ -54,8 +60,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid input" }, { status: 400 });
     }
 
+    const maxOrder = await prisma.mCQQuestion.findFirst({
+      where: { videoId: validation.data.videoId },
+      orderBy: { order: "desc" },
+      select: { order: true },
+    });
+
     const question = await prisma.mCQQuestion.create({
-      data: { ...validation.data, status: "DRAFT" },
+      data: { ...validation.data, status: "DRAFT", order: (maxOrder?.order ?? -1) + 1 },
     });
 
     return NextResponse.json({ data: question }, { status: 201 });

@@ -72,14 +72,29 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
       return true;
     },
-    jwt({ token, user, account }) {
+    async jwt({ token, user, account, trigger }) {
       if (user) {
         token.id = user.id;
         token.role = (user as { role?: string }).role || "USER";
         token.isApproved = (user as { isApproved?: boolean }).isApproved ?? false;
+        token.name = user.name;
+        token.picture = user.image;
       }
       if (account) {
         token.accessToken = account.access_token;
+      }
+      // Refresh profile data from database when session is updated
+      if (trigger === "update" && token.id) {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: { name: true, image: true },
+          });
+          if (dbUser) {
+            token.name = dbUser.name ?? "";
+            token.picture = dbUser.image ?? null;
+          }
+        } catch { /* ignore */ }
       }
       return token;
     },
@@ -88,6 +103,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.id = token.id as string;
         session.user.role = token.role as UserRole;
         session.user.isApproved = token.isApproved as boolean;
+        session.user.name = token.name as string | null;
+        session.user.image = token.picture as string | null;
       }
       return session;
     },

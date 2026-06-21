@@ -14,6 +14,43 @@ const createVideoSchema = z.object({
   commentsEnabled: z.boolean().default(true),
 });
 
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const courseId = searchParams.get("courseId");
+    const moduleId = searchParams.get("moduleId");
+
+    const where: Record<string, unknown> = {};
+    if (moduleId) {
+      where.moduleId = moduleId;
+    } else if (courseId) {
+      where.module = { courseId };
+    }
+
+    const videos = await prisma.video.findMany({
+      where,
+      orderBy: [{ module: { course: { title: "asc" } } }, { module: { order: "asc" } }, { order: "asc" }],
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        module: {
+          select: {
+            id: true,
+            title: true,
+            course: { select: { id: true, title: true } },
+          },
+        },
+      },
+    });
+
+    return NextResponse.json({ data: videos });
+  } catch (error) {
+    console.error("Get videos error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();
