@@ -1,25 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Send, MessageSquare, FileText, HelpCircle, Check, X, ChevronRight, CheckCircle, Loader2, Lock } from "lucide-react";
+import { ArrowLeft, Send, MessageSquare, ChevronRight, CheckCircle, Loader2, Lock, ChevronLeft } from "lucide-react";
 import { extractYouTubeId, timeAgo } from "@/lib/utils";
 import apiClient from "@/lib/api-client";
 import { toast } from "sonner";
 import Link from "next/link";
-import type { EnrollmentItem } from "@/types";
+import type { EnrollmentItem, CourseWithModules } from "@/types";
 
 interface CommentData {
   id: string;
@@ -32,15 +30,6 @@ interface CommentData {
   replies?: CommentData[];
 }
 
-interface MCQQuestionData {
-  id: string;
-  question: string;
-  options: string[];
-  correctAnswer: number;
-  explanation: string | null;
-  submissions?: { selectedAnswer: number; isCorrect: boolean }[];
-}
-
 export default function UserVideoPage() {
   const params = useParams();
   const { data: session } = useSession();
@@ -50,8 +39,6 @@ export default function UserVideoPage() {
 
   const [commentText, setCommentText] = useState("");
   const [replyText, setReplyText] = useState<Record<string, string>>({});
-  const [noteContent, setNoteContent] = useState("");
-  const [mcqAnswers, setMcqAnswers] = useState<Record<string, number>>({});
 
   const { data: enrollments } = useQuery({
     queryKey: ["user-enrollments"],
@@ -60,6 +47,31 @@ export default function UserVideoPage() {
       return res.data.data as EnrollmentItem[];
     },
   });
+
+  const { data: course } = useQuery({
+    queryKey: ["course", courseId],
+    queryFn: async () => {
+      const res = await apiClient.get(`/courses/${courseId}`);
+      return res.data.data as CourseWithModules;
+    },
+  });
+
+  const { prevVideo, nextVideo } = useMemo(() => {
+    if (!course) return { prevVideo: null, nextVideo: null };
+    const flat: { id: string; moduleId: string }[] = [];
+    for (const mod of course.modules) {
+      for (const v of mod.videos) {
+        if (v.status === "PUBLISHED") {
+          flat.push({ id: v.id, moduleId: mod.id });
+        }
+      }
+    }
+    const idx = flat.findIndex((v) => v.id === videoId);
+    return {
+      prevVideo: idx > 0 ? flat[idx - 1] : null,
+      nextVideo: idx < flat.length - 1 ? flat[idx + 1] : null,
+    };
+  }, [course, videoId]);
 
   const isEnrolled = !!enrollments?.find((e: EnrollmentItem) => e.courseId === courseId);
 
@@ -91,22 +103,6 @@ export default function UserVideoPage() {
     enabled: !!video?.commentsEnabled,
   });
 
-  const { data: note } = useQuery({
-    queryKey: ["note", videoId],
-    queryFn: async () => {
-      const res = await apiClient.get("/notes", { params: { videoId } });
-      return res.data.data;
-    },
-  });
-
-  const { data: mcqQuestions } = useQuery({
-    queryKey: ["mcqs", videoId],
-    queryFn: async () => {
-      const res = await apiClient.get("/mcqs", { params: { videoId, status: "PUBLISHED" } });
-      return res.data.data || [];
-    },
-  });
-
   const commentMutation = useMutation({
     mutationFn: (data: { content: string; videoId: string; parentId?: string }) =>
       apiClient.post("/comments", data),
@@ -127,23 +123,6 @@ export default function UserVideoPage() {
     },
   });
 
-  const noteMutation = useMutation({
-    mutationFn: (data: { content: string; videoId: string }) => apiClient.post("/notes", data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["note", videoId] });
-      toast.success("Note saved");
-    },
-    onError: () => toast.error("Failed to save note"),
-  });
-
-  const mcqSubmitMutation = useMutation({
-    mutationFn: (data: { questionId: string; selectedAnswer: number }) =>
-      apiClient.post("/mcqs/submit", data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["mcqs", videoId] });
-    },
-  });
-
   const toggleCommentMutation = useMutation({
     mutationFn: (enabled: boolean) =>
       apiClient.patch(`/videos/${videoId}`, { commentsEnabled: enabled }),
@@ -156,27 +135,25 @@ export default function UserVideoPage() {
   const userRole = session?.user?.role;
 
   if (isLoading) {
-    return <DashboardLayout><div className="animate-pulse space-y-4"><div className="h-8 w-64 bg-muted rounded" /><div className="aspect-video bg-muted rounded" /></div></DashboardLayout>;
+    return <div className="animate-pulse space-y-4"><div className="h-8 w-64 bg-muted rounded" /><div className="aspect-video bg-muted rounded" /></div>;
   }
 
   if (!video) {
     return (
-      <DashboardLayout>
-        <div className="space-y-6 max-w-5xl">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" asChild>
-              <Link href={`/user/courses/${courseId}`}>
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-          <Card className="text-center py-16">
-            <Lock className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Video Not Available</h2>
-            <p className="text-muted-foreground">This video is not available or has been removed.</p>
-          </Card>
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" asChild>
+            <Link href={`/user/courses/${courseId}`}>
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
         </div>
-      </DashboardLayout>
+        <Card className="text-center py-16">
+          <Lock className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-xl font-semibold mb-2">Video Not Available</h2>
+          <p className="text-muted-foreground">This video is not available or has been removed.</p>
+        </Card>
+      </div>
     );
   }
 
@@ -184,49 +161,7 @@ export default function UserVideoPage() {
 
   if (!isEnrolled && userRole !== "ADMIN" && userRole !== "SUPER_ADMIN") {
     return (
-      <DashboardLayout>
-        <div className="space-y-6 max-w-5xl">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" asChild>
-              <Link href={`/user/courses/${courseId}`}>
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
-            </Button>
-            <div>
-              <h1 className="text-xl font-bold">{video?.title}</h1>
-              <p className="text-sm text-muted-foreground">
-                {video?.module?.course?.title} <ChevronRight className="inline h-3 w-3" /> {video?.module?.title}
-              </p>
-            </div>
-          </div>
-
-          <Card className="text-center py-16 border-primary/30 bg-primary/5">
-            <Lock className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Enrollment Required</h2>
-            <p className="text-muted-foreground max-w-md mx-auto mb-6">
-              You need to enroll in this course to watch videos, leave comments, and access learning materials.
-            </p>
-            <Button
-              size="lg"
-              onClick={() => enrollMutation.mutate()}
-              disabled={enrollMutation.isPending}
-            >
-              {enrollMutation.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <CheckCircle className="mr-2 h-4 w-4" />
-              )}
-              Enroll to Watch
-            </Button>
-          </Card>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  return (
-    <DashboardLayout>
-      <div className="space-y-6 max-w-5xl">
+      <div className="space-y-6">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" asChild>
             <Link href={`/user/courses/${courseId}`}>
@@ -241,119 +176,144 @@ export default function UserVideoPage() {
           </div>
         </div>
 
-        {youtubeId && (
-          <div className="aspect-video rounded-lg overflow-hidden bg-black">
-            <iframe
-              src={`https://www.youtube.com/embed/${youtubeId}`}
-              className="w-full h-full"
-              allowFullScreen
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            />
-          </div>
-        )}
-
-        {(video?.description || (userRole === "ADMIN" || userRole === "SUPER_ADMIN")) && (
-          <div className="flex items-center justify-between">
-            <p className="text-muted-foreground">{video?.description || ""}</p>
-            {(userRole === "ADMIN" || userRole === "SUPER_ADMIN") && (
-              <div>
-                <Label className="text-xs mb-2">Comments</Label>
-                <Switch className="mt-2"  checked={video?.commentsEnabled} onCheckedChange={toggleCommentMutation.mutate} />
-              </div>
-            )}
-          </div>
-        )}
-
-        <Tabs defaultValue="comments">
-          <TabsList>
-            <TabsTrigger value="comments">
-              <MessageSquare className="mr-2 h-4 w-4" /> Comments
-            </TabsTrigger>
-            <TabsTrigger value="notes">
-              <FileText className="mr-2 h-4 w-4" /> Notes
-            </TabsTrigger>
-            <TabsTrigger value="mcq">
-              <HelpCircle className="mr-2 h-4 w-4" /> Quiz ({mcqQuestions?.length || 0})
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="comments" className="space-y-4">
-            {video?.commentsEnabled ? (
-              <>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    if (!commentText.trim()) return;
-                    commentMutation.mutate({ content: commentText, videoId });
-                  }}
-                  className="flex gap-2"
-                >
-                  <Textarea
-                    value={commentText}
-                    onChange={(e) => setCommentText(e.target.value)}
-                    placeholder="Write a comment..."
-                    className="min-h-[60px]"
-                  />
-                  <Button type="submit" size="icon" disabled={!commentText.trim() || commentMutation.isPending}>
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </form>
-
-                <div className="space-y-4">
-                  {comments?.map((comment: CommentData) => (
-                    <CommentNode
-                      key={comment.id}
-                      comment={comment}
-                      userRole={userRole || ""}
-                      userId={session?.user?.id || ""}
-                      replyText={replyText}
-                      setReplyText={setReplyText}
-                      onReply={(content, parentId) => commentMutation.mutate({ content, videoId, parentId })}
-                      onDelete={(id) => deleteCommentMutation.mutate(id)}
-                    />
-                  ))}
-                </div>
-              </>
+        <Card className="text-center py-16 border-primary/30 bg-primary/5">
+          <Lock className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-xl font-semibold mb-2">Enrollment Required</h2>
+          <p className="text-muted-foreground max-w-md mx-auto mb-6">
+            You need to enroll in this course to watch videos, leave comments, and access learning materials.
+          </p>
+          <Button
+            size="lg"
+            onClick={() => enrollMutation.mutate()}
+            disabled={enrollMutation.isPending}
+          >
+            {enrollMutation.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
-              <Card><CardContent className="py-8 text-center text-muted-foreground">Comments are disabled for this video.</CardContent></Card>
+              <CheckCircle className="mr-2 h-4 w-4" />
             )}
-          </TabsContent>
-
-          <TabsContent value="notes">
-            <Card>
-              <CardContent className="space-y-4 pt-4">
-                <Textarea
-                  key={note?.id || "new"}
-                  placeholder="Write your notes here..."
-                  defaultValue={note?.content || ""}
-                  onChange={(e) => setNoteContent(e.target.value)}
-                  className="min-h-[200px]"
-                />
-                <Button onClick={() => noteMutation.mutate({ content: noteContent, videoId })} disabled={noteMutation.isPending}>
-                  Save Notes
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="mcq" className="space-y-4">
-            {mcqQuestions?.length === 0 ? (
-              <Card><CardContent className="py-8 text-center text-muted-foreground">No quiz questions for this video.</CardContent></Card>
-            ) : (
-              mcqQuestions?.map((q: MCQQuestionData) => (
-                <MCQCard
-                  key={q.id}
-                  question={q}
-                  selectedAnswer={mcqAnswers[q.id]}
-                  onSelect={(answer) => setMcqAnswers({ ...mcqAnswers, [q.id]: answer })}
-                  onSubmit={() => mcqSubmitMutation.mutate({ questionId: q.id, selectedAnswer: mcqAnswers[q.id] })}
-                />
-              ))
-            )}
-          </TabsContent>
-        </Tabs>
+            Enroll to Watch
+          </Button>
+        </Card>
       </div>
-    </DashboardLayout>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon" asChild>
+          <Link href={`/user/courses/${courseId}`}>
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+        </Button>
+        <div>
+          <h1 className="text-xl font-bold">{video?.title}</h1>
+          <p className="text-sm text-muted-foreground">
+            {video?.module?.course?.title} <ChevronRight className="inline h-3 w-3" /> {video?.module?.title}
+          </p>
+        </div>
+      </div>
+
+      {youtubeId && (
+        <div className="aspect-video rounded-lg overflow-hidden bg-black">
+          <iframe
+            src={`https://www.youtube.com/embed/${youtubeId}`}
+            className="w-full h-full"
+            allowFullScreen
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          />
+        </div>
+      )}
+
+      {(video?.description || (userRole === "ADMIN" || userRole === "SUPER_ADMIN")) && (
+        <div className="flex items-center justify-between">
+          <p className="text-muted-foreground">{video?.description || ""}</p>
+          {(userRole === "ADMIN" || userRole === "SUPER_ADMIN") && (
+            <div>
+              <Label className="text-xs mb-2">Comments</Label>
+              <Switch className="mt-2" checked={video?.commentsEnabled} onCheckedChange={toggleCommentMutation.mutate} />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Next/Previous navigation */}
+      {(prevVideo || nextVideo) && (
+        <div className="flex items-center gap-2">
+          {prevVideo ? (
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/user/courses/${courseId}/modules/${prevVideo.moduleId}/videos/${prevVideo.id}`}>
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Previous
+              </Link>
+            </Button>
+          ) : (
+            <div />
+          )}
+          <div className="flex-1" />
+          {nextVideo ? (
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/user/courses/${courseId}/modules/${nextVideo.moduleId}/videos/${nextVideo.id}`}>
+                Next
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Link>
+            </Button>
+          ) : (
+            <div />
+          )}
+        </div>
+      )}
+
+      {/* Comments */}
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold flex items-center gap-2">
+          <MessageSquare className="h-5 w-5" /> Comments
+        </h2>
+        {video?.commentsEnabled ? (
+          <>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!commentText.trim()) return;
+                commentMutation.mutate({ content: commentText, videoId });
+              }}
+              className="flex gap-2"
+            >
+              <Textarea
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                placeholder="Write a comment..."
+                className="min-h-[60px]"
+              />
+              <Button type="submit" size="icon" disabled={!commentText.trim() || commentMutation.isPending}>
+                <Send className="h-4 w-4" />
+              </Button>
+            </form>
+
+            <div className="space-y-4">
+              {comments?.map((comment: CommentData) => (
+                <CommentNode
+                  key={comment.id}
+                  comment={comment}
+                  userRole={userRole || ""}
+                  userId={session?.user?.id || ""}
+                  replyText={replyText}
+                  setReplyText={setReplyText}
+                  onReply={(content, parentId) => commentMutation.mutate({ content, videoId, parentId })}
+                  onDelete={(id) => deleteCommentMutation.mutate(id)}
+                />
+              ))}
+              {comments?.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-6">No comments yet. Be the first to comment!</p>
+              )}
+            </div>
+          </>
+        ) : (
+          <Card><CardContent className="py-8 text-center text-muted-foreground">Comments are disabled for this video.</CardContent></Card>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -441,66 +401,5 @@ function CommentNode({
         </div>
       ))}
     </div>
-  );
-}
-
-function MCQCard({
-  question,
-  selectedAnswer,
-  onSelect,
-  onSubmit,
-}: {
-  question: MCQQuestionData;
-  selectedAnswer: number | undefined;
-  onSelect: (answer: number) => void;
-  onSubmit: () => void;
-}) {
-  const submission = question.submissions?.[0];
-  const isSubmitted = !!submission;
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">{question.question}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        {question.options.map((option: string, i: number) => {
-          let className = "flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors hover:bg-muted";
-          if (isSubmitted) {
-            if (i === question.correctAnswer) className += " border-success bg-success/10";
-            else if (submission.selectedAnswer === i && !submission.isCorrect) className += " border-destructive bg-destructive/10";
-          } else if (selectedAnswer === i) {
-            className += " border-primary bg-primary/10";
-          }
-
-          return (
-            <div key={i} className={className} onClick={() => !isSubmitted && onSelect(i)}>
-              <div className="flex items-center gap-2 flex-1">
-                <span className="text-sm font-medium">{String.fromCharCode(65 + i)}.</span>
-                <span className="text-sm">{option}</span>
-              </div>
-              {isSubmitted && i === question.correctAnswer && <Check className="h-4 w-4 text-success" />}
-              {isSubmitted && submission.selectedAnswer === i && !submission.isCorrect && <X className="h-4 w-4 text-destructive" />}
-            </div>
-          );
-        })}
-
-        {!isSubmitted && (
-          <Button onClick={onSubmit} disabled={selectedAnswer === undefined} className="w-full mt-3">
-            Submit
-          </Button>
-        )}
-
-        {isSubmitted && submission.isCorrect && (
-          <p className="text-sm text-success font-medium">Correct!</p>
-        )}
-        {isSubmitted && !submission.isCorrect && (
-          <p className="text-sm text-muted-foreground">
-            Correct answer: <span className="text-success font-medium">{String.fromCharCode(65 + question.correctAnswer)}. {question.options[question.correctAnswer]}</span>
-            {question.explanation && <span className="block mt-1">{question.explanation}</span>}
-          </p>
-        )}
-      </CardContent>
-    </Card>
   );
 }

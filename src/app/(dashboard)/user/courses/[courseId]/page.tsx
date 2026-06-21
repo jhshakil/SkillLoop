@@ -1,15 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import {
   Dialog,
   DialogContent,
@@ -18,8 +16,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { ArrowLeft, BookOpen, Play, CheckCircle, Loader2, ChevronRight } from "lucide-react";
-import { extractYouTubeId } from "@/lib/utils";
+import { ArrowLeft, BookOpen, Play, CheckCircle, Loader2 } from "lucide-react";
 import apiClient from "@/lib/api-client";
 import { toast } from "sonner";
 import type { CourseWithModules, EnrollmentItem } from "@/types";
@@ -50,6 +47,11 @@ export default function UserCourseDetailPage() {
   const enrollment = enrollments?.find((e) => e.courseId === courseId);
   const isEnrolled = !!enrollment;
 
+  const publishedVideoCount = useMemo(
+    () => course?.modules?.reduce((sum, m) => sum + m.videos.filter((v) => v.status === "PUBLISHED").length, 0) ?? 0,
+    [course?.modules]
+  );
+
   const enrollMutation = useMutation({
     mutationFn: () => apiClient.post("/enrollments", { courseId }),
     onSuccess: () => {
@@ -64,28 +66,23 @@ export default function UserCourseDetailPage() {
 
   if (isCourseLoading) {
     return (
-      <DashboardLayout>
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 w-48 bg-muted rounded" />
-          <div className="h-64 bg-muted rounded" />
-        </div>
-      </DashboardLayout>
+      <div className="animate-pulse space-y-4">
+        <div className="h-8 w-48 bg-muted rounded" />
+        <div className="h-64 bg-muted rounded" />
+      </div>
     );
   }
 
   if (!course) {
     return (
-      <DashboardLayout>
-        <Card className="text-center py-12">
-          <p className="text-muted-foreground">Course not found.</p>
-        </Card>
-      </DashboardLayout>
+      <Card className="text-center py-12">
+        <p className="text-muted-foreground">Course not found.</p>
+      </Card>
     );
   }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
@@ -144,7 +141,7 @@ export default function UserCourseDetailPage() {
               <Play className="h-8 w-8 text-primary" />
               <div>
                 <p className="text-2xl font-bold">
-                  {course.modules.reduce((sum, m) => sum + m.videos.filter((v) => v.status === "PUBLISHED").length, 0)}
+                  {publishedVideoCount}
                 </p>
                 <p className="text-sm text-muted-foreground">Videos</p>
               </div>
@@ -152,85 +149,18 @@ export default function UserCourseDetailPage() {
           </Card>
         </div>
 
-        {/* Modules & Videos */}
+        {/* Course Content */}
         {isEnrolled ? (
           <div>
-            <h2 className="text-xl font-semibold mb-4">Course Content</h2>
-            {course.modules.length > 0 ? (
-              <Accordion type="single" collapsible defaultValue={course.modules[0]?.id} className="space-y-2">
-                {course.modules.map((mod, modIdx) => {
-                  const publishedVideos = mod.videos.filter((v) => v.status === "PUBLISHED");
-                  return (
-                  <AccordionItem key={mod.id} value={mod.id} className="border rounded-lg bg-card px-4">
-                    <AccordionTrigger className="hover:no-underline">
-                      <div className="flex items-center gap-3 text-left flex-1">
-                        <span className="flex items-center justify-center h-7 w-7 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                          {modIdx + 1}
-                        </span>
-                        <div>
-                          <p className="font-medium">{mod.title}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {publishedVideos.length} video{publishedVideos.length !== 1 ? "s" : ""}
-                          </p>
-                        </div>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="space-y-3 pt-2">
-                        {publishedVideos.map((video, vidIdx) => (
-                          <Link
-                            key={video.id}
-                            href={`/user/courses/${courseId}/modules/${mod.id}/videos/${video.id}`}
-                          >
-                            <div className="flex items-center gap-4 p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors group cursor-pointer">
-                              <span className="text-sm text-muted-foreground font-mono w-6">
-                                {vidIdx + 1}.
-                              </span>
-                              <div className="relative w-28 h-16 rounded overflow-hidden shrink-0 bg-black">
-                                {extractYouTubeId(video.youtubeUrl) ? (
-                                  <Image
-                                    src={`https://img.youtube.com/vi/${extractYouTubeId(video.youtubeUrl)}/mqdefault.jpg`}
-                                    alt={video.title}
-                                    width={112}
-                                    height={64}
-                                    className="w-full h-full object-cover opacity-80"
-                                  />
-                                ) : (
-                                  <div className="flex items-center justify-center h-full">
-                                    <Play className="h-5 w-5 text-white/50" />
-                                  </div>
-                                )}
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                  <Play className="h-4 w-4 text-white group-hover:scale-110 transition-transform" />
-                                </div>
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="font-medium text-sm truncate">{video.title}</p>
-                                <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
-                                  {video.description || "No description"}
-                                </p>
-                                {video._count?.comments !== undefined && (
-                                  <span className="text-xs text-muted-foreground">
-                                    {video._count.comments} comment{video._count.comments !== 1 ? "s" : ""}
-                                  </span>
-                                )}
-                              </div>
-                              <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </div>
-                          </Link>
-                        ))}
-                        {publishedVideos.length === 0 && (
-                          <div className="py-6 text-center">
-                            <p className="text-muted-foreground text-sm">No videos available in this module.</p>
-                          </div>
-                        )}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                  );
-                })}
-              </Accordion>
-            ) : (
+            {publishedVideoCount > 0 && (
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Course Content</h2>
+                <span className="text-sm text-muted-foreground">
+                  Browse modules and videos in the sidebar ←
+                </span>
+              </div>
+            )}
+            {course.modules.length === 0 && (
               <Card className="text-center py-12">
                 <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground">
@@ -309,6 +239,5 @@ export default function UserCourseDetailPage() {
           </DialogContent>
         </Dialog>
       </div>
-    </DashboardLayout>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,16 @@ export default function UserDashboardPage() {
     },
   });
 
+  const enrolledCourseIds = useMemo(
+    () => new Set(enrollments?.map((e) => e.courseId) || []),
+    [enrollments]
+  );
+
+  const availableCourses = useMemo(
+    () => courses?.filter((c: { id: string }) => !enrolledCourseIds.has(c.id)) || [],
+    [courses, enrolledCourseIds]
+  );
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -73,7 +84,7 @@ export default function UserDashboardPage() {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">{courses?.length || 0}</p>
+              <p className="text-2xl font-bold">{availableCourses.length}</p>
             </CardContent>
           </Card>
         </div>
@@ -178,7 +189,7 @@ export default function UserDashboardPage() {
         <div id="explore">
           <h2 className="text-lg font-semibold mb-4">Explore Courses</h2>
           <div className="grid gap-4 md:grid-cols-3">
-            {courses?.map((course: { id: string; title: string; description: string | null; thumbnail: string | null; status: string; type: string; _count?: { modules: number } }) => (
+            {availableCourses.map((course: { id: string; title: string; description: string | null; thumbnail: string | null; status: string; type: string; _count?: { modules: number } }) => (
               <Link key={course.id} href={`/user/courses/${course.id}`}>
                 <Card className="hover:shadow-lg transition-all hover:-translate-y-1 overflow-hidden group cursor-pointer h-full">
                   <div className="relative h-36 bg-muted">
@@ -211,6 +222,11 @@ export default function UserDashboardPage() {
                 </Card>
               </Link>
             ))}
+            {availableCourses.length === 0 && (
+              <Card className="col-span-full py-6 text-center">
+                <p className="text-muted-foreground">No more courses to explore right now.</p>
+              </Card>
+            )}
           </div>
         </div>
       </div>
