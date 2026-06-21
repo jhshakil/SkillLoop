@@ -106,14 +106,14 @@ export function ImageUpload({ value, onChange, className }: ImageUploadProps) {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="bg-white/90 hover:bg-white text-black rounded-md px-3 py-1.5 text-sm font-medium"
+                className="bg-background hover:bg-muted text-foreground rounded-md px-3 py-1.5 text-sm font-medium border"
               >
                 Change
               </button>
               <button
                 type="button"
                 onClick={() => onChange("")}
-                className="bg-red-500/90 hover:bg-red-500 text-white rounded-md p-1.5"
+                className="bg-destructive/90 hover:bg-destructive text-destructive-foreground rounded-md p-1.5"
               >
                 <X className="h-4 w-4" />
               </button>
