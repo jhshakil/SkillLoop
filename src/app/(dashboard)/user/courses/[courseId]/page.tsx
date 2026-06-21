@@ -126,7 +126,7 @@ export default function UserCourseDetailPage() {
         )}
 
         {/* Stats */}
-        <div className="grid gap-4 grid-cols-2">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
           <Card>
             <CardContent className="p-4 flex items-center gap-3">
               <BookOpen className="h-8 w-8 text-primary" />

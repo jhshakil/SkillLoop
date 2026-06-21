@@ -24,6 +24,15 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  async redirects() {
+    return [
+      {
+        source: "/admin/courses/:courseId/modules/:moduleId/videos/:videoId",
+        destination: "/user/courses/:courseId/modules/:moduleId/videos/:videoId",
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -20,7 +20,12 @@ interface MCQQuestionData {
   submissions?: { selectedAnswer: number; isCorrect: boolean }[];
 }
 
-export function VideoRightSidebar() {
+interface VideoRightSidebarProps {
+  embedded?: boolean;
+  onNavigate?: () => void;
+}
+
+export function VideoRightSidebar({ embedded, onNavigate }: VideoRightSidebarProps) {
   const pathname = usePathname();
   const segments = pathname.split("/");
   const videoId = segments[segments.length - 1];
@@ -30,10 +35,10 @@ export function VideoRightSidebar() {
     return null;
   }
 
-  return <VideoRightSidebarContent videoId={videoId} />;
+  return <VideoRightSidebarContent videoId={videoId} embedded={embedded} onNavigate={onNavigate} />;
 }
 
-function VideoRightSidebarContent({ videoId }: { videoId: string }) {
+function VideoRightSidebarContent({ videoId, embedded }: { videoId: string; embedded?: boolean; onNavigate?: () => void }) {
   const queryClient = useQueryClient();
   const [noteContent, setNoteContent] = useState("");
   const [mcqAnswers, setMcqAnswers] = useState<Record<string, number>>({});
@@ -72,7 +77,7 @@ function VideoRightSidebarContent({ videoId }: { videoId: string }) {
   });
 
   return (
-    <aside className="w-[340px] border-l bg-background flex flex-col h-full shrink-0">
+    <aside className={`${embedded ? "w-full" : "w-[340px]"} border-l bg-background flex flex-col h-full shrink-0`}>
       <div className="p-4 border-b">
         <h3 className="font-semibold text-sm">Tools</h3>
       </div>

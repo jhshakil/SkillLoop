@@ -32,7 +32,7 @@ interface CommentData {
 
 export default function UserVideoPage() {
   const params = useParams();
-  const { data: session } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
   const queryClient = useQueryClient();
   const videoId = params.videoId as string;
   const courseId = params.courseId as string;
@@ -40,7 +40,7 @@ export default function UserVideoPage() {
   const [commentText, setCommentText] = useState("");
   const [replyText, setReplyText] = useState<Record<string, string>>({});
 
-  const { data: enrollments } = useQuery({
+  const { data: enrollments, isLoading: enrollmentsLoading } = useQuery({
     queryKey: ["user-enrollments"],
     queryFn: async () => {
       const res = await apiClient.get("/enrollments");
@@ -133,8 +133,9 @@ export default function UserVideoPage() {
   });
 
   const userRole = session?.user?.role;
+  const isSessionLoading = sessionStatus === "loading";
 
-  if (isLoading) {
+  if (isLoading || isSessionLoading || enrollmentsLoading) {
     return <div className="animate-pulse space-y-4"><div className="h-8 w-64 bg-muted rounded" /><div className="aspect-video bg-muted rounded" /></div>;
   }
 
@@ -335,7 +336,7 @@ function CommentNode({
   onDelete: (id: string) => void;
 }) {
   const [showReply, setShowReply] = useState(false);
-  const isModerator = comment.user.role === "MODERATOR";
+  const isStaff = comment.user.role === "MODERATOR" || comment.user.role === "ADMIN" || comment.user.role === "SUPER_ADMIN";
   const canDelete = userRole === "ADMIN" || userRole === "SUPER_ADMIN" || userRole === "MODERATOR" || userId === comment.userId;
 
   return (
@@ -348,7 +349,7 @@ function CommentNode({
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <span className="font-medium text-sm">{comment.user.name}</span>
-            {isModerator && (
+            {isStaff && (
               <Badge variant="warning" className="text-[10px] px-1.5 py-0">Author</Badge>
             )}
             <span className="text-xs text-muted-foreground">{timeAgo(comment.createdAt)}</span>

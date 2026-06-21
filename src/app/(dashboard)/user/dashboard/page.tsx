@@ -97,7 +97,7 @@ export default function UserDashboardPage() {
               <Link href="/user/courses">View All <ChevronRight className="ml-1 h-4 w-4" /></Link>
             </Button>
           </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {enrollments?.map((enrollment) => (
               <Link key={enrollment.id} href={`/user/courses/${enrollment.courseId}`}>
                 <Card className="hover:shadow-lg transition-all hover:-translate-y-1 overflow-hidden group cursor-pointer h-full">
@@ -188,7 +188,7 @@ export default function UserDashboardPage() {
         {/* Explore Courses */}
         <div id="explore">
           <h2 className="text-lg font-semibold mb-4">Explore Courses</h2>
-          <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
             {availableCourses.map((course: { id: string; title: string; description: string | null; thumbnail: string | null; status: string; type: string; _count?: { modules: number } }) => (
               <Link key={course.id} href={`/user/courses/${course.id}`}>
                 <Card className="hover:shadow-lg transition-all hover:-translate-y-1 overflow-hidden group cursor-pointer h-full">

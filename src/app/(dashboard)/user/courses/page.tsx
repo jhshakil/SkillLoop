@@ -64,7 +64,7 @@ export default function UserCoursesPage() {
         </div>
 
         {isLoading ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map((i) => (
               <Card key={i} className="animate-pulse overflow-hidden">
                 <div className="h-40 bg-muted" />
@@ -79,7 +79,7 @@ export default function UserCoursesPage() {
         ) : (
           <>
             {filtered.length > 0 ? (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {filtered.map((enrollment) => (
                   <Link key={enrollment.id} href={`/user/courses/${enrollment.courseId}`}>
                     <Card className="hover:shadow-lg transition-all hover:-translate-y-1 overflow-hidden group cursor-pointer h-full">

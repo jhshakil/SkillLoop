@@ -70,16 +70,16 @@ export default async function HomePage() {
 
       <main>
         {/* Hero */}
-        <section className="py-20 lg:py-32">
+        <section className="py-12 lg:py-32">
           <div className="container mx-auto px-4 text-center">
-            <h1 className="text-4xl font-bold tracking-tight sm:text-6xl lg:text-7xl">
+            <h1 className="text-3xl font-bold tracking-tight sm:text-6xl lg:text-7xl">
               Learn Without Limits
             </h1>
             <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
               SkillLoop is a modern learning management system designed to help you master
               new skills through structured courses, video lessons, and interactive assessments.
             </p>
-            <div className="mt-10 flex items-center justify-center gap-4">
+            <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button size="lg" asChild>
                 <Link href={session ? "/user/dashboard" : "/register"}>
                   Get Started <ChevronRight className="ml-2 h-4 w-4" />
@@ -95,7 +95,7 @@ export default async function HomePage() {
         {/* Stats */}
         <section className="border-t bg-muted/30 py-16">
           <div className="container mx-auto px-4">
-            <div className="grid gap-8 md:grid-cols-3">
+            <div className="grid gap-8 grid-cols-1 sm:grid-cols-3">
               <div className="text-center p-6">
                 <div className="inline-flex rounded-full bg-primary/10 p-3 mb-4">
                   <BookOpen className="h-6 w-6 text-primary" />
@@ -136,7 +136,7 @@ export default async function HomePage() {
           <section className="py-20">
             <div className="container mx-auto px-4">
               <div className="text-center mb-12">
-                <h2 className="text-3xl font-bold">Explore Courses</h2>
+                <h2 className="text-2xl sm:text-3xl font-bold">Explore Courses</h2>
                 <p className="mt-3 text-muted-foreground">
                   Start learning from our collection of structured courses
                 </p>
@@ -203,9 +203,9 @@ export default async function HomePage() {
         )}
 
         {/* CTA */}
-        <section className="py-20 border-t">
+        <section className="py-12 lg:py-20 border-t">
           <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl font-bold">Ready to Start Learning?</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold">Ready to Start Learning?</h2>
             <p className="mt-4 text-muted-foreground max-w-md mx-auto">
               Join SkillLoop today and unlock your potential.
             </p>

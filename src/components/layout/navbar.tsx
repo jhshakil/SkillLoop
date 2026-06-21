@@ -17,7 +17,11 @@ import { Moon, Sun, LogOut, User } from "lucide-react";
 import Link from "next/link";
 import { getRoleBadgeColor } from "@/lib/utils";
 
-export function Navbar() {
+interface NavbarProps {
+  children?: React.ReactNode;
+}
+
+export function Navbar({ children }: NavbarProps) {
   const { data: session } = useSession();
   const { theme, setTheme } = useTheme();
 
@@ -25,6 +29,7 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b bg-background px-4 lg:px-6">
+      {children}
       <div className="flex-1" />
       <div className="flex items-center gap-3">
         <Button

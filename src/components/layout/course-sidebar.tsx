@@ -23,9 +23,11 @@ interface VideoNavItem {
 interface CourseSidebarProps {
   course: CourseWithModules;
   courseId: string;
+  embedded?: boolean;
+  onNavigate?: () => void;
 }
 
-export function CourseSidebar({ course, courseId }: CourseSidebarProps) {
+export function CourseSidebar({ course, courseId, embedded, onNavigate }: CourseSidebarProps) {
   const pathname = usePathname();
   const segments = pathname.split("/");
   const currentVideoId = segments[segments.length - 1];
@@ -57,7 +59,7 @@ export function CourseSidebar({ course, courseId }: CourseSidebarProps) {
   const currentModuleId = flatVideos[currentIndex]?.moduleId;
   const defaultOpenModule = currentModuleId || course.modules[0]?.id || "";
 
-  if (collapsed) {
+  if (collapsed && !embedded) {
     return (
       <aside className="w-12 border-r bg-background flex flex-col h-full shrink-0 items-center py-2 gap-2">
         <Button
@@ -88,7 +90,7 @@ export function CourseSidebar({ course, courseId }: CourseSidebarProps) {
   }
 
   return (
-    <aside className="w-[320px] border-r bg-background flex flex-col h-full shrink-0">
+    <aside className={`${embedded ? "w-full" : "w-[320px]"} border-r bg-background flex flex-col h-full shrink-0`}>
       {/* Header */}
       <div className="flex items-center justify-between p-3 border-b">
         <div className="min-w-0 flex-1">
@@ -97,15 +99,17 @@ export function CourseSidebar({ course, courseId }: CourseSidebarProps) {
             {flatVideos.length} video{flatVideos.length !== 1 ? "s" : ""}
           </p>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 shrink-0 ml-2"
-          onClick={() => setCollapsed(true)}
-          title="Collapse sidebar"
-        >
-          <PanelLeftClose className="h-4 w-4" />
-        </Button>
+        {!embedded && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0 ml-2"
+            onClick={() => setCollapsed(true)}
+            title="Collapse sidebar"
+          >
+            <PanelLeftClose className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       {/* Navigation buttons */}
@@ -113,7 +117,10 @@ export function CourseSidebar({ course, courseId }: CourseSidebarProps) {
         <div className="flex items-center gap-2 p-2 border-b">
           {prevVideo ? (
             <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" asChild>
-              <Link href={`/user/courses/${courseId}/modules/${prevVideo.moduleId}/videos/${prevVideo.id}`}>
+              <Link
+                href={`/user/courses/${courseId}/modules/${prevVideo.moduleId}/videos/${prevVideo.id}`}
+                onClick={onNavigate}
+              >
                 <ChevronLeft className="h-3.5 w-3.5 mr-1" />
                 Previous
               </Link>
@@ -123,7 +130,10 @@ export function CourseSidebar({ course, courseId }: CourseSidebarProps) {
           )}
           {nextVideo ? (
             <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" asChild>
-              <Link href={`/user/courses/${courseId}/modules/${nextVideo.moduleId}/videos/${nextVideo.id}`}>
+              <Link
+                href={`/user/courses/${courseId}/modules/${nextVideo.moduleId}/videos/${nextVideo.id}`}
+                onClick={onNavigate}
+              >
                 Next
                 <ChevronRight className="h-3.5 w-3.5 ml-1" />
               </Link>
@@ -160,6 +170,7 @@ export function CourseSidebar({ course, courseId }: CourseSidebarProps) {
                             <Link
                               key={video.id}
                               href={`/user/courses/${courseId}/modules/${mod.id}/videos/${video.id}`}
+                              onClick={onNavigate}
                             >
                               <div
                                 className={`flex items-center gap-2.5 px-2.5 py-2 rounded-md transition-colors group ${

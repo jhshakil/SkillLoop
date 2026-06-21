@@ -150,7 +150,7 @@ export default function AdminCoursesPage() {
         </div>
 
         {isLoading ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map((i) => (
               <Card key={i} className="animate-pulse">
                 <CardHeader>
@@ -165,7 +165,7 @@ export default function AdminCoursesPage() {
           </div>
         ) : (
           <>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {data?.data.map((course) => (
                 <Card key={course.id} className="hover:shadow-md transition-shadow overflow-hidden">
                   <div className="relative h-40 bg-muted">
@@ -204,7 +204,7 @@ export default function AdminCoursesPage() {
                         {course._count?.enrollments || 0} Enrolled
                       </span>
                     </div>
-                    <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <span className="text-xs text-muted-foreground">
                         {formatDate(course.createdAt)}
                       </span>

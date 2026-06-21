@@ -105,12 +105,12 @@ export default function SuperAdminAdminsPage() {
           </p>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
           {/* Users Section */}
           <div className="lg:col-span-2 space-y-4">
-            <div className="flex items-center justify-between">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <h2 className="text-lg font-semibold">All Users</h2>
-              <div className="relative w-64">
+              <div className="relative w-full sm:w-64">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Search users..."
@@ -138,7 +138,7 @@ export default function SuperAdminAdminsPage() {
                   {data?.data.map((user) => (
                     <Card key={user.id}>
                       <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                           <div className="flex items-center gap-3">
                             {user.image ? (
                               <Image

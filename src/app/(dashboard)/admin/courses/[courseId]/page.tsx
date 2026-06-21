@@ -172,7 +172,7 @@ export default function AdminCourseDetailPage() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Back + Header */}
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
             <Link href="/admin/courses">
               <ArrowLeft className="h-4 w-4" />
@@ -226,7 +226,7 @@ export default function AdminCourseDetailPage() {
         </Card>
 
         {/* Stats */}
-        <div className="grid gap-4 grid-cols-2">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
           <Card>
             <CardContent className="p-4 flex items-center gap-3">
               <div className="p-2 rounded-lg bg-primary/10">
@@ -253,7 +253,7 @@ export default function AdminCourseDetailPage() {
 
         {/* Modules Accordion */}
         <div>
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
             <h2 className="text-lg font-semibold">Course Content</h2>
             <Button onClick={() => setIsModuleOpen(true)} size="sm">
               <Plus className="mr-2 h-4 w-4" /> Add Module
@@ -301,7 +301,7 @@ export default function AdminCourseDetailPage() {
                       {mod.videos.map((video, vidIdx) => (
                         <div
                           key={video.id}
-                          className="flex items-center gap-4 p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors group"
+                          className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors group"
                         >
                           <span className="text-sm text-muted-foreground font-mono w-6">
                             {vidIdx + 1}.
@@ -326,7 +326,7 @@ export default function AdminCourseDetailPage() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-sm truncate">{video.title}</p>
-                            <div className="flex items-center gap-2 mt-1">
+            <div className="flex flex-wrap items-center gap-2 mt-1">
                               <Badge className={getStatusBadgeColor(video.status)}>
                                 {video.status}
                               </Badge>
